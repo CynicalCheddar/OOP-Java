@@ -31,6 +31,7 @@ public class Vector2D {
         Vector2D addVector = new Vector2D();
         addVector.setX1(x1 + v.getX1());
         addVector.setX2(x2 + v.getX2());
+        return addVector;
     }
 
     Vector2D scale(double f){
