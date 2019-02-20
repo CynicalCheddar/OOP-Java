@@ -21,3 +21,8 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+zoo mk2/.idea/zoo mk2.iml
+zoo mk2/.idea/encodings.xml
+zoo mk2/.idea/modules.xml
+zoo mk2/.idea/vcs.xml
+zoo mk2/.idea/workspace.xml
