@@ -40,11 +40,21 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		// TODO
 
 			//this.rounds = requireNonNull(rounds);
-			validateState(mrX, rounds, graph);
+
+			//Creates a list of all of our player configurations, lets us do some iteration.
+			ArrayList<PlayerConfiguration> configurations = new ArrayList<>();
+			configurations.add(mrX);
+			configurations.add(firstDetective);
+			configurations.add(secondDetective);
+			configurations.add(thirdDetective);
+			configurations.add(fourthDetective);
+			configurations.add(fifthDetective);
+
+			validateState(mrX, rounds, graph, configurations);
 
 	}
 
-	public void validateState(PlayerConfiguration mrX, List<Boolean> rounds, Graph<Integer, Transport> graph){
+	public void validateState(PlayerConfiguration mrX, List<Boolean> rounds, Graph<Integer, Transport> graph, List<PlayerConfiguration> configurations){
 		if(mrX.colour != BLACK || mrX.colour.isDetective()){
 			throw new IllegalArgumentException("MrX should be Black... racial profiling");
 		}
