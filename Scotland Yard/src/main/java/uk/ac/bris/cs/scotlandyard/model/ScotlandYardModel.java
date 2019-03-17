@@ -51,7 +51,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			configurations.add(fifthDetective);
 
 			validateState(mrX, rounds, graph, configurations);
-
 	}
 
 	public void validateState(PlayerConfiguration mrX, List<Boolean> rounds, Graph<Integer, Transport> graph, List<PlayerConfiguration> configurations){
