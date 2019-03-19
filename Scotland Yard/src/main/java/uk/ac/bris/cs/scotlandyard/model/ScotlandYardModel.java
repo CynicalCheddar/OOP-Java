@@ -14,8 +14,8 @@ import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.Objects.requireNonNull;
 import static uk.ac.bris.cs.scotlandyard.model.Colour.BLACK;
-import static uk.ac.bris.cs.scotlandyard.model.Ticket.DOUBLE;
-import static uk.ac.bris.cs.scotlandyard.model.Ticket.SECRET;
+import static uk.ac.bris.cs.scotlandyard.model.Ticket.*;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -49,6 +49,13 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			}
 
 			validateState(mrX, rounds, graph, configurations);
+
+			for (PlayerConfiguration detective : configurations) {
+				if (detective.tickets.get(ticketTaxi) != 0) // THIS BIT DO NOT WORKY
+					throw new IllegalArgumentException("You poor bastard got no tickets");
+			}
+
+
 	}
 
 	public void validateState(PlayerConfiguration mrX, List<Boolean> rounds, Graph<Integer, Transport> graph, List<PlayerConfiguration> configurations){
@@ -77,6 +84,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				throw new IllegalArgumentException("Duplicate colour, you willy!");
 				setColour.add(configuration.colour);
 		}
+
+		//Check that all detectives don't have any secret or double tickets
 
 
 	}

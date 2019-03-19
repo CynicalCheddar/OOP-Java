@@ -36,6 +36,8 @@ public class PlayerConfiguration {
 		this.player = player;
 		this.tickets = tickets;
 		this.location = location;
+
+
 	}
 
 	@Override
