@@ -35,8 +35,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	public ScotlandYardModel(List<Boolean> rounds, Graph<Integer, Transport> graph,
 			PlayerConfiguration mrX, PlayerConfiguration firstDetective,
-			PlayerConfiguration secondDetective, PlayerConfiguration thirdDetective,
-			PlayerConfiguration fourthDetective, PlayerConfiguration fifthDetective) {
+							 PlayerConfiguration... restOfTheDetectives) {
 		// TODO
 
 			//this.rounds = requireNonNull(rounds);
@@ -45,10 +44,9 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			ArrayList<PlayerConfiguration> configurations = new ArrayList<>();
 			configurations.add(mrX);
 			configurations.add(firstDetective);
-			configurations.add(secondDetective);
-			configurations.add(thirdDetective);
-			configurations.add(fourthDetective);
-			configurations.add(fifthDetective);
+			for (PlayerConfiguration configuration : restOfTheDetectives) {
+				configurations.add(configuration);
+			}
 
 			validateState(mrX, rounds, graph, configurations);
 	}
@@ -65,14 +63,20 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 
 		//We need to pass a list of all of the player configurations
+		// This should check that nobody is in the same location.
 		Set<Integer> set = new HashSet<>();
 		for (PlayerConfiguration configuration : configurations) {
 			if (set.contains(configuration.location))
-				throw new IllegalArgumentException("Duplicate location");
-			set.add(configuration.location);
+				throw new IllegalArgumentException("Duplicate location, you plonker!");
+				set.add(configuration.location);
 		}
-
-
+		// This should check that nobody is of the same colour:
+		Set<Colour> setColour = new HashSet<>();
+		for (PlayerConfiguration configuration : configurations) {
+			if (set.contains(configuration.colour))
+				throw new IllegalArgumentException("Duplicate colour, you willy!");
+				setColour.add(configuration.colour);
+		}
 
 
 	}
