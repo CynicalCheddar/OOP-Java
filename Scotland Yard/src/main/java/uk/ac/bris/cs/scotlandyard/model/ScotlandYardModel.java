@@ -27,6 +27,7 @@ import java.util.function.Consumer;
 import uk.ac.bris.cs.gamekit.graph.Edge;
 import uk.ac.bris.cs.gamekit.graph.Graph;
 import uk.ac.bris.cs.gamekit.graph.ImmutableGraph;
+import uk.ac.bris.cs.scotlandyard.ui.controller.Debug;
 
 // TODO implement all methods and pass all tests
 public class ScotlandYardModel implements ScotlandYardGame {
@@ -42,30 +43,40 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 			//Creates a list of all of our player configurations, lets us do some iteration.
 			ArrayList<PlayerConfiguration> configurations = new ArrayList<>();
+			ArrayList<ScotlandYardPlayer> scotlandYardPlayers = new ArrayList<>();
+
+
 			configurations.add(mrX);
 			configurations.add(firstDetective);
 			for (PlayerConfiguration configuration : restOfTheDetectives) {
+
 				configurations.add(configuration);
+
 			}
 
-			validateState(mrX, rounds, graph, configurations);
+			validateConfigurations(mrX, rounds, graph, configurations);
 
-			for (PlayerConfiguration detective : configurations) {
-				if (detective.tickets.get(ticketTaxi) != 0) // THIS BIT DO NOT WORKY
-					throw new IllegalArgumentException("You poor bastard got no tickets");
+
+			//adds mrX to our player list
+			scotlandYardPlayers.add(new ScotlandYardPlayer(mrX.player,mrX.colour, mrX.location, mrX.tickets));
+			//adds the first detective to our player list
+			scotlandYardPlayers.add(new ScotlandYardPlayer(firstDetective.player,firstDetective.colour, firstDetective.location, firstDetective.tickets));
+			//adds the rest of the detectives to our player list
+			for (PlayerConfiguration detective : restOfTheDetectives) {
+				scotlandYardPlayers.add(new ScotlandYardPlayer(detective.player,detective.colour, detective.location, detective.tickets));
 			}
 
-
+			validatePlayers(scotlandYardPlayers);
 	}
 
-	public void validateState(PlayerConfiguration mrX, List<Boolean> rounds, Graph<Integer, Transport> graph, List<PlayerConfiguration> configurations){
-		if(mrX.colour != BLACK || mrX.colour.isDetective()){
+	public void validateConfigurations(PlayerConfiguration mrX, List<Boolean> rounds, Graph<Integer, Transport> graph, List<PlayerConfiguration> configurations) {
+		if (mrX.colour != BLACK || mrX.colour.isDetective()) {
 			throw new IllegalArgumentException("MrX should be Black... racial profiling");
 		}
 		if (rounds.isEmpty()) {
 			throw new IllegalArgumentException("You aint got no rounds mate");
 		}
-		if(graph.isEmpty() == true){
+		if (graph.isEmpty() == true) {
 			throw new IllegalArgumentException("You bloody fruitshop owner has no graphs!");
 		}
 
@@ -75,14 +86,41 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		for (PlayerConfiguration configuration : configurations) {
 			if (set.contains(configuration.location))
 				throw new IllegalArgumentException("Duplicate location, you plonker!");
-				set.add(configuration.location);
+			set.add(configuration.location);
 		}
 		// This should check that nobody is of the same colour:
 		Set<Colour> setColour = new HashSet<>();
 		for (PlayerConfiguration configuration : configurations) {
 			if (set.contains(configuration.colour))
 				throw new IllegalArgumentException("Duplicate colour, you willy!");
-				setColour.add(configuration.colour);
+			setColour.add(configuration.colour);
+		}
+
+
+	}
+
+
+		public void validatePlayers(List<ScotlandYardPlayer> scotlandYardPlayerList){
+			// We need to set up each player with their tickets
+			//Tests the tickets owned by each detective
+			for(ScotlandYardPlayer player : scotlandYardPlayerList){
+				if(player.hasTickets(DOUBLE) && player.isDetective()){
+					throw new IllegalArgumentException("Yer bastidge, yer bleedin worm! By joh! No detective should have a double ticket");
+				}
+				if(player.hasTickets(SECRET) && player.isDetective()){
+					throw new IllegalArgumentException("The name's Bond... James Bond... but I shouldn't have a secret ticket");
+				}
+				System.out.print(player.tickets());
+				if(player.isMrX()){
+					if(!player.hasTickets(TAXI)){
+						System.out.print("Mr X has no tickets");
+
+					}
+
+					if(!player.hasTickets(TAXI) ||!player.hasTickets(BUS) || !player.hasTickets(UNDERGROUND) || !player.hasTickets(SECRET) ){
+						throw new IllegalArgumentException("mrX is just gonna be caught you utter wibbly! He's got no tickets whatsoever");
+					}
+				}
 		}
 
 		//Check that all detectives don't have any secret or double tickets
