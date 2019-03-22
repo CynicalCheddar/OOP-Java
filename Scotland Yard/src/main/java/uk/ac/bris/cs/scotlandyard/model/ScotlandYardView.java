@@ -1,5 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.model;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -97,7 +98,10 @@ public interface ScotlandYardView {
 	 * @return an immutable list of booleans that indicate the turns where MrX
 	 * reveals himself; never empty and never null
 	 */
-	List<Boolean> getRounds();
+	@Override
+	List<Boolean> getRounds(){
+		//return Collections.unmodifiableList(rounds);
+	}
 
 	/**
 	 * An immutable view of the graph the game is using.

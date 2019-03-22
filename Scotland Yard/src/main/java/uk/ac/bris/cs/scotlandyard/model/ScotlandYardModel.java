@@ -39,26 +39,26 @@ public class ScotlandYardModel implements ScotlandYardGame {
 							 PlayerConfiguration... restOfTheDetectives) {
 		// TODO
 
-			//this.rounds = requireNonNull(rounds);
+
 
 			//Creates a list of all of our player configurations, lets us do some iteration.
 			ArrayList<PlayerConfiguration> configurations = new ArrayList<>();
-			ArrayList<ScotlandYardPlayer> scotlandYardPlayers = new ArrayList<>();
-
-
+			ArrayList<PlayerConfiguration> detectives = new ArrayList<>();
 			configurations.add(mrX);
 			configurations.add(firstDetective);
+			detectives.add(firstDetective);
 			for (PlayerConfiguration configuration : restOfTheDetectives) {
 
 				configurations.add(configuration);
-
+				detectives.add(configuration);
 			}
 
-			validateConfigurations(mrX, rounds, graph, configurations);
 
-
+			//Creates a list of all our player objects:
+			ArrayList<ScotlandYardPlayer> scotlandYardPlayers = new ArrayList<>();
 			//adds mrX to our player list
-			scotlandYardPlayers.add(new ScotlandYardPlayer(mrX.player,mrX.colour, mrX.location, mrX.tickets));
+			ScotlandYardPlayer mrXPlayer = new ScotlandYardPlayer(mrX.player,mrX.colour, mrX.location, mrX.tickets);
+			scotlandYardPlayers.add(mrXPlayer);
 			//adds the first detective to our player list
 			scotlandYardPlayers.add(new ScotlandYardPlayer(firstDetective.player,firstDetective.colour, firstDetective.location, firstDetective.tickets));
 			//adds the rest of the detectives to our player list
@@ -66,10 +66,20 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				scotlandYardPlayers.add(new ScotlandYardPlayer(detective.player,detective.colour, detective.location, detective.tickets));
 			}
 
-			validatePlayers(scotlandYardPlayers);
+
+
+			validateConfigurations(mrX, rounds, graph, configurations, detectives);
+			validatePlayers(scotlandYardPlayers, mrXPlayer, configurations);
+		//	validateGameOver();
 	}
 
-	public void validateConfigurations(PlayerConfiguration mrX, List<Boolean> rounds, Graph<Integer, Transport> graph, List<PlayerConfiguration> configurations) {
+	public void validateGameOver(){
+		if(isGameOver() == true){
+			throw new IllegalArgumentException("Fookin ell the game's already over!");
+		}
+	}
+
+	public void validateConfigurations(PlayerConfiguration mrX, List<Boolean> rounds, Graph<Integer, Transport> graph, List<PlayerConfiguration> configurations, List<PlayerConfiguration> detectives) {
 		if (mrX.colour != BLACK || mrX.colour.isDetective()) {
 			throw new IllegalArgumentException("MrX should be Black... racial profiling");
 		}
@@ -97,12 +107,43 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 
 
+		//Check that all the detectives have references to their ticket types:
+		for (PlayerConfiguration detective : detectives) {
+			if (detective.tickets.get(TAXI) == null) {
+				throw new IllegalArgumentException("Ticket, you willy!");
+			}
+			if (detective.tickets.get(BUS) == null) {
+				throw new IllegalArgumentException("Ticket, you willy!");
+			}
+			if (detective.tickets.get(UNDERGROUND) == null) {
+				throw new IllegalArgumentException("Ticket, you willy!");
+			}
+		}
+		//Check that mrX has references to his tickets:
+		if (mrX.tickets.get(TAXI) == null) {
+			throw new IllegalArgumentException("Ticket, you willy mrX!");
+		}
+		if (mrX.tickets.get(BUS) == null) {
+			throw new IllegalArgumentException("Ticket, you willy mrX!");
+		}
+		if (mrX.tickets.get(UNDERGROUND) == null) {
+			throw new IllegalArgumentException("Ticket, you willy mrX!");
+		}
+		if (mrX.tickets.get(SECRET) == null) {
+			throw new IllegalArgumentException("Ticket, you willy mrX!");
+		}
+		if (mrX.tickets.get(DOUBLE) == null) {
+			throw new IllegalArgumentException("Ticket, you willy mrX!");
+		}
+
+
 	}
 
 
-		public void validatePlayers(List<ScotlandYardPlayer> scotlandYardPlayerList){
+		public void validatePlayers(List<ScotlandYardPlayer> scotlandYardPlayerList, ScotlandYardPlayer mrXPlayer, List<PlayerConfiguration> playerConfigurations){
 			// We need to set up each player with their tickets
 			//Tests the tickets owned by each detective
+			int mrXCount = 0;
 			for(ScotlandYardPlayer player : scotlandYardPlayerList){
 				if(player.hasTickets(DOUBLE) && player.isDetective()){
 					throw new IllegalArgumentException("Yer bastidge, yer bleedin worm! By joh! No detective should have a double ticket");
@@ -110,18 +151,35 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				if(player.hasTickets(SECRET) && player.isDetective()){
 					throw new IllegalArgumentException("The name's Bond... James Bond... but I shouldn't have a secret ticket");
 				}
-				System.out.print(player.tickets());
+
 				if(player.isMrX()){
-					if(!player.hasTickets(TAXI)){
-						System.out.print("Mr X has no tickets");
+					mrXCount += 1;
 
-					}
-
-					if(!player.hasTickets(TAXI) ||!player.hasTickets(BUS) || !player.hasTickets(UNDERGROUND) || !player.hasTickets(SECRET) ){
+					if(!player.hasTickets(TAXI) ||!player.hasTickets(BUS) || !player.hasTickets(UNDERGROUND) || !player.hasTickets(SECRET) || !player.hasTickets(DOUBLE)){
 						throw new IllegalArgumentException("mrX is just gonna be caught you utter wibbly! He's got no tickets whatsoever");
 					}
+					System.out.print(player.tickets());
+					if(!player.hasTickets(TAXI, 1) || !player.hasTickets(BUS, 2) || !player.hasTickets(UNDERGROUND, 3) || !player.hasTickets(SECRET, 5) || !player.hasTickets(DOUBLE, 4)){
+
+						//throw new IllegalArgumentException("mrX has not been dealt the correct amount of cards. I call shenanigans here!");
+					}
 				}
-		}
+				else if(player.isDetective()){
+					if(!player.hasTickets(TAXI) ||!player.hasTickets(BUS) || !player.hasTickets(UNDERGROUND)){
+						throw new IllegalArgumentException("mrX is just gonna get away, the detectives have no tickets!");
+					}
+				}
+			}
+			if(mrXCount > 1){
+				throw new IllegalArgumentException("There's some sort of criminal ring going on, there's more than one mrX!");
+			}
+
+			//Do the player tests on Mr X:
+
+
+
+
+
 
 		//Check that all detectives don't have any secret or double tickets
 
