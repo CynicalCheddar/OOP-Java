@@ -31,31 +31,32 @@ import uk.ac.bris.cs.scotlandyard.ui.controller.Debug;
 
 // TODO implement all methods and pass all tests
 public class ScotlandYardModel implements ScotlandYardGame {
-
-
+	ArrayList<ScotlandYardPlayer> scotlandYardPlayers = new ArrayList<>();
+	ArrayList<Colour> detectiveColours = new ArrayList<>();
+	final Graph<Integer, Transport> graphPublic;
 
 	public ScotlandYardModel(List<Boolean> rounds, Graph<Integer, Transport> graph,
 			PlayerConfiguration mrX, PlayerConfiguration firstDetective,
 							 PlayerConfiguration... restOfTheDetectives) {
-		// TODO
 
-
-
+			graphPublic = graph;
 			//Creates a list of all of our player configurations, lets us do some iteration.
 			ArrayList<PlayerConfiguration> configurations = new ArrayList<>();
 			ArrayList<PlayerConfiguration> detectives = new ArrayList<>();
 			configurations.add(mrX);
 			configurations.add(firstDetective);
 			detectives.add(firstDetective);
+			detectiveColours.add(firstDetective.colour);
 			for (PlayerConfiguration configuration : restOfTheDetectives) {
 
 				configurations.add(configuration);
 				detectives.add(configuration);
+				detectiveColours.add(configuration.colour);
 			}
 
 
 			//Creates a list of all our player objects:
-			ArrayList<ScotlandYardPlayer> scotlandYardPlayers = new ArrayList<>();
+
 			//adds mrX to our player list
 			ScotlandYardPlayer mrXPlayer = new ScotlandYardPlayer(mrX.player,mrX.colour, mrX.location, mrX.tickets);
 			scotlandYardPlayers.add(mrXPlayer);
@@ -65,6 +66,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			for (PlayerConfiguration detective : restOfTheDetectives) {
 				scotlandYardPlayers.add(new ScotlandYardPlayer(detective.player,detective.colour, detective.location, detective.tickets));
 			}
+
 
 
 
@@ -213,55 +215,86 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	@Override
 	public List<Colour> getPlayers() {
 		// TODO
-		throw new RuntimeException("Implement me");
+
+		ArrayList<Colour> getPlayerList = new ArrayList<>();
+		for (ScotlandYardPlayer player : scotlandYardPlayers) {
+			getPlayerList.add(player.colour());
+		}
+		//throw new RuntimeException("Implement me");
+		return getPlayerList;
 	}
 
 	@Override
 	public Set<Colour> getWinningPlayers() {
 		// TODO
-		throw new RuntimeException("Implement me");
+		Set<Colour> winningColours = new HashSet<>();
+		if(isGameOver() == true){
+
+			for (Colour colour : detectiveColours){
+				winningColours.add(colour);
+			}
+		}
+		return winningColours;
+
 	}
 
 	@Override
 	public Optional<Integer> getPlayerLocation(Colour colour) {
 		// TODO
-		throw new RuntimeException("Implement me");
+		for (ScotlandYardPlayer player : scotlandYardPlayers) {
+			if(player.colour() == colour){
+				if(player.isDetective()){
+					return Optional.of(player.location());
+				}
+
+			}
+		}
+		return Optional.of(null);
 	}
 
 	@Override
 	public Optional<Integer> getPlayerTickets(Colour colour, Ticket ticket) {
 		// TODO
-		throw new RuntimeException("Implement me");
+		for (ScotlandYardPlayer player : scotlandYardPlayers) {
+			if(player.colour() == colour){
+				return Optional.of(player.tickets().get(ticket));
+			}
+		}
+		return Optional.of(null);
 	}
 
 	@Override
 	public boolean isGameOver() {
 		// TODO
-		throw new RuntimeException("Implement me");
+		return false;
+
 	}
 
 	@Override
 	public Colour getCurrentPlayer() {
-		// TODO
-		throw new RuntimeException("Implement me");
+		// just gets mrx right now
+		return (BLACK);
 	}
 
 	@Override
 	public int getCurrentRound() {
 		// TODO
+
 		throw new RuntimeException("Implement me");
 	}
 
 	@Override
 	public List<Boolean> getRounds() {
 		// TODO
+
 		throw new RuntimeException("Implement me");
 	}
 
 	@Override
 	public Graph<Integer, Transport> getGraph() {
 		// TODO
-		throw new RuntimeException("Implement me");
+		return graphPublic;
+
 	}
 
 }

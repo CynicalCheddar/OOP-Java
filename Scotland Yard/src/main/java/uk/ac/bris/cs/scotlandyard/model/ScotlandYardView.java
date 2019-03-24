@@ -98,10 +98,10 @@ public interface ScotlandYardView {
 	 * @return an immutable list of booleans that indicate the turns where MrX
 	 * reveals himself; never empty and never null
 	 */
-	@Override
-	List<Boolean> getRounds(){
+
+	List<Boolean> getRounds();
 		//return Collections.unmodifiableList(rounds);
-	}
+
 
 	/**
 	 * An immutable view of the graph the game is using.
