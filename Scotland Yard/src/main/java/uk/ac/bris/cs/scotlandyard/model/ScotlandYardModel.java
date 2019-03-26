@@ -13,7 +13,7 @@ import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableSet;
 import static java.util.Objects.requireNonNull;
-import static uk.ac.bris.cs.scotlandyard.model.Colour.BLACK;
+import static uk.ac.bris.cs.scotlandyard.model.Colour.*;
 import static uk.ac.bris.cs.scotlandyard.model.Ticket.*;
 
 import java.util.ArrayList;
@@ -33,13 +33,29 @@ import uk.ac.bris.cs.scotlandyard.ui.controller.Debug;
 public class ScotlandYardModel implements ScotlandYardGame {
 	ArrayList<ScotlandYardPlayer> scotlandYardPlayers = new ArrayList<>();
 	ArrayList<Colour> detectiveColours = new ArrayList<>();
+	ArrayList<Colour> allColours = new ArrayList<>();
 	final Graph<Integer, Transport> graphPublic;
+	final List<Boolean> publicRounds;
+	public int intCurrentRound = 0;
+	ScotlandYardPlayer currentPlayer;
 
+
+
+
+	void addcolours(){
+		allColours.add(RED);
+		allColours.add(BLUE);
+		allColours.add(BLACK);
+		allColours.add(BLUE);
+		allColours.add(YELLOW);
+		allColours.add(WHITE);
+	}
 	public ScotlandYardModel(List<Boolean> rounds, Graph<Integer, Transport> graph,
 			PlayerConfiguration mrX, PlayerConfiguration firstDetective,
 							 PlayerConfiguration... restOfTheDetectives) {
-
+			publicRounds = rounds;
 			graphPublic = graph;
+			addcolours();
 			//Creates a list of all of our player configurations, lets us do some iteration.
 			ArrayList<PlayerConfiguration> configurations = new ArrayList<>();
 			ArrayList<PlayerConfiguration> detectives = new ArrayList<>();
@@ -216,12 +232,14 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	public List<Colour> getPlayers() {
 		// TODO
 
-		ArrayList<Colour> getPlayerList = new ArrayList<>();
+		List<Colour> getPlayerList = new ArrayList<>();
 		for (ScotlandYardPlayer player : scotlandYardPlayers) {
 			getPlayerList.add(player.colour());
 		}
+
+		final List<Colour> getPlayerListFinal = getPlayerList;
 		//throw new RuntimeException("Implement me");
-		return getPlayerList;
+		return getPlayerListFinal;
 	}
 
 	@Override
@@ -237,16 +255,29 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		return winningColours;
 
 	}
-
+	//Get a list of the colours that don't exist in the current game
 	@Override
 	public Optional<Integer> getPlayerLocation(Colour colour) {
 		// TODO
+		boolean validPlayer = false;
+		for (ScotlandYardPlayer player : scotlandYardPlayers){
+			if(colour == player.colour()){
+				validPlayer = true;
+			}
+		}
+		if(validPlayer == false){
+			return Optional.empty();
+		}
+
+
 		for (ScotlandYardPlayer player : scotlandYardPlayers) {
 			if(player.colour() == colour){
 				if(player.isDetective()){
 					return Optional.of(player.location());
 				}
-
+				else if(player.isMrX()){
+					return Optional.of(0);
+				}
 			}
 		}
 		return Optional.of(null);
@@ -255,11 +286,22 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	@Override
 	public Optional<Integer> getPlayerTickets(Colour colour, Ticket ticket) {
 		// TODO
+		boolean validPlayer = false;
+		for (ScotlandYardPlayer player : scotlandYardPlayers){
+			if(colour == player.colour()){
+				validPlayer = true;
+			}
+		}
+		if(validPlayer == false){
+			return Optional.empty();
+		}
+
 		for (ScotlandYardPlayer player : scotlandYardPlayers) {
 			if(player.colour() == colour){
 				return Optional.of(player.tickets().get(ticket));
 			}
 		}
+
 		return Optional.of(null);
 	}
 
@@ -279,21 +321,23 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	@Override
 	public int getCurrentRound() {
 		// TODO
+		return intCurrentRound;
 
-		throw new RuntimeException("Implement me");
+
 	}
 
 	@Override
 	public List<Boolean> getRounds() {
 		// TODO
+		return(publicRounds);
 
-		throw new RuntimeException("Implement me");
 	}
 
 	@Override
 	public Graph<Integer, Transport> getGraph() {
 		// TODO
-		return graphPublic;
+		final Graph<Integer, Transport> graphLocal = graphPublic;
+		return graphLocal;
 
 	}
 
