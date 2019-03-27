@@ -36,8 +36,11 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	ArrayList<Colour> allColours = new ArrayList<>();
 	final Graph<Integer, Transport> graphPublic;
 	final List<Boolean> publicRounds;
+	List<Player> publicPlayerInterfaces;
 	public int intCurrentRound = 0;
 	ScotlandYardPlayer currentPlayer;
+	Player currentPlayerInterface;
+	int intCurrentPlayerIndex = 0;
 
 
 
@@ -53,6 +56,9 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	public ScotlandYardModel(List<Boolean> rounds, Graph<Integer, Transport> graph,
 			PlayerConfiguration mrX, PlayerConfiguration firstDetective,
 							 PlayerConfiguration... restOfTheDetectives) {
+
+
+
 			publicRounds = rounds;
 			graphPublic = graph;
 			addcolours();
@@ -76,6 +82,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			//adds mrX to our player list
 			ScotlandYardPlayer mrXPlayer = new ScotlandYardPlayer(mrX.player,mrX.colour, mrX.location, mrX.tickets);
 			scotlandYardPlayers.add(mrXPlayer);
+
 			//adds the first detective to our player list
 			scotlandYardPlayers.add(new ScotlandYardPlayer(firstDetective.player,firstDetective.colour, firstDetective.location, firstDetective.tickets));
 			//adds the rest of the detectives to our player list
@@ -89,6 +96,26 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			validateConfigurations(mrX, rounds, graph, configurations, detectives);
 			validatePlayers(scotlandYardPlayers, mrXPlayer, configurations);
 		//	validateGameOver();
+
+		addPlayerInterfaces();
+		//Now let's set mrX as the first player turn.
+		currentPlayer = mrXPlayer;
+	}
+
+	void addPlayerInterfaces(){
+		System.out.print("addPlayerInterfaces called");
+
+		System.out.print(scotlandYardPlayers.size());
+		for(ScotlandYardPlayer sctPlayer : scotlandYardPlayers){
+			// THIS BIT IS A BUGGER AND DOESN'T WORK
+			publicPlayerInterfaces.add(new Player() {
+				@Override
+				public void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
+
+				}
+			});
+		}
+		System.out.print(publicPlayerInterfaces.size());
 	}
 
 	public void validateGameOver(){
@@ -217,9 +244,20 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	}
 
 	@Override
+	//This subroutine increments the currently selected player that we will be dealing with.
+	//Loops around if it reaches the end of the array.
 	public void startRotate() {
-		// TODO
-		throw new RuntimeException("Implement me");
+		intCurrentPlayerIndex += 1;
+		if(intCurrentPlayerIndex > publicPlayerInterfaces.size() - 1){
+			intCurrentPlayerIndex = 0;
+		}
+		currentPlayer = scotlandYardPlayers.get(intCurrentPlayerIndex);
+		currentPlayerInterface = publicPlayerInterfaces.get(intCurrentPlayerIndex);
+		startMove();
+	}
+
+	public void startMove(){
+		//currentPlayerInterface.makeMove();
 	}
 
 	@Override
@@ -229,6 +267,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	}
 
 	@Override
+	//Gets a list of the colours of all players currently in the game
 	public List<Colour> getPlayers() {
 		// TODO
 
@@ -243,6 +282,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	}
 
 	@Override
+	// Right now this function just says that the detectives win if the game is over.
 	public Set<Colour> getWinningPlayers() {
 		// TODO
 		Set<Colour> winningColours = new HashSet<>();
@@ -255,8 +295,9 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		return winningColours;
 
 	}
-	//Get a list of the colours that don't exist in the current game
+
 	@Override
+	//Get the location of a specified player by colour. Return empty if the player is not in the game.
 	public Optional<Integer> getPlayerLocation(Colour colour) {
 		// TODO
 		boolean validPlayer = false;
@@ -282,7 +323,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 		return Optional.of(null);
 	}
-
+	// Gets the amount of tickets of a certain type owned by a certain -player. Return empty if the player doesn't exist.
 	@Override
 	public Optional<Integer> getPlayerTickets(Colour colour, Ticket ticket) {
 		// TODO
@@ -314,8 +355,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	@Override
 	public Colour getCurrentPlayer() {
-		// just gets mrx right now
-		return (BLACK);
+
+		return (currentPlayer.colour());
 	}
 
 	@Override
