@@ -249,8 +249,13 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		 *        moves, the game cannot
 		 */
 			//void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback);
-		currentPlayerInterface.makeMove(ScotlandYardView, 0, Set<Move>);
-		currentPlayerInterface.makeMove();
+
+		////get the moves the player can make and return as a set
+		ScotlandYardView view = this;
+		Consumer moveConsumer = currentPlayerInterface;
+		Set<Move> moveSet = new HashSet<>();
+		//Consumer<Colour> moveConsumer = new Cons<>();
+		currentPlayerInterface.makeMove( view, 0, moveSet, moveConsumer);
 	}
 
 	@Override
