@@ -36,7 +36,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	ArrayList<Colour> allColours = new ArrayList<>();
 	final Graph<Integer, Transport> graphPublic;
 	final List<Boolean> publicRounds;
-	List<Player> publicPlayerInterfaces;
+	List<PlayerConfiguration> publicPlayerConfigurations;
 	public int intCurrentRound = 0;
 	ScotlandYardPlayer currentPlayer;
 	Player currentPlayerInterface;
@@ -75,7 +75,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				detectives.add(configuration);
 				detectiveColours.add(configuration.colour);
 			}
-
+			//just making this a global variable because that passes the tests. I don't like it but it works.
+			publicPlayerConfigurations = configurations;
 
 			//Creates a list of all our player objects:
 
@@ -97,26 +98,12 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			validatePlayers(scotlandYardPlayers, mrXPlayer, configurations);
 		//	validateGameOver();
 
-		addPlayerInterfaces();
+
 		//Now let's set mrX as the first player turn.
 		currentPlayer = mrXPlayer;
+
 	}
 
-	void addPlayerInterfaces(){
-		System.out.print("addPlayerInterfaces called");
-
-		System.out.print(scotlandYardPlayers.size());
-		for(ScotlandYardPlayer sctPlayer : scotlandYardPlayers){
-			// THIS BIT IS A BUGGER AND DOESN'T WORK
-			publicPlayerInterfaces.add(new Player() {
-				@Override
-				public void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback) {
-
-				}
-			});
-		}
-		System.out.print(publicPlayerInterfaces.size());
-	}
 
 	public void validateGameOver(){
 		if(isGameOver() == true){
@@ -218,17 +205,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			if(mrXCount > 1){
 				throw new IllegalArgumentException("There's some sort of criminal ring going on, there's more than one mrX!");
 			}
-
-			//Do the player tests on Mr X:
-
-
-
-
-
-
-		//Check that all detectives don't have any secret or double tickets
-
-
 	}
 
 	@Override
@@ -247,17 +223,34 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	//This subroutine increments the currently selected player that we will be dealing with.
 	//Loops around if it reaches the end of the array.
 	public void startRotate() {
-		intCurrentPlayerIndex += 1;
-		if(intCurrentPlayerIndex > publicPlayerInterfaces.size() - 1){
+
+		if(intCurrentPlayerIndex > publicPlayerConfigurations.size() - 1){
 			intCurrentPlayerIndex = 0;
 		}
 		currentPlayer = scotlandYardPlayers.get(intCurrentPlayerIndex);
-		currentPlayerInterface = publicPlayerInterfaces.get(intCurrentPlayerIndex);
+		currentPlayerInterface = publicPlayerConfigurations.get(intCurrentPlayerIndex).player;
+
+		intCurrentPlayerIndex += 1; //Get ready to select the next player on the next cycle.
 		startMove();
+
 	}
 
 	public void startMove(){
-		//currentPlayerInterface.makeMove();
+		/**
+		 * Called when the player is required to make a move as required by
+		 * the @link ScotlandYardGame}
+		 *
+		 * @param view a view of the current {@link ScotlandYardGame}, there are no
+		 *        guarantees on immutability or thread safety so you should no hold
+		 *        reference to the view beyond the scope of this method; never null
+		 * @param location the location of the player
+		 * @param moves valid moves the player can make; never empty and never null
+		 * @param callback callback when a move is chosen from the given valid
+		 *        moves, the game cannot
+		 */
+			//void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback);
+		currentPlayerInterface.makeMove(ScotlandYardView, 0, Set<Move>);
+		currentPlayerInterface.makeMove();
 	}
 
 	@Override
