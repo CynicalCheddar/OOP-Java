@@ -272,7 +272,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 		final List<Colour> getPlayerListFinal = getPlayerList;
 		//throw new RuntimeException("Implement me");
-		return getPlayerListFinal;
+		return Collections.unmodifiableList(getPlayerListFinal);
 	}
 
 	@Override
@@ -286,7 +286,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				winningColours.add(colour);
 			}
 		}
-		return winningColours;
+		return Collections.unmodifiableSet(winningColours);
 
 	}
 
@@ -362,15 +362,14 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	@Override
 	public List<Boolean> getRounds() {
 		// TODO
-		return(publicRounds);
+		return(Collections.unmodifiableList(publicRounds));
 
 	}
 
 	@Override
 	public Graph<Integer, Transport> getGraph() {
 		// TODO
-		final Graph<Integer, Transport> graphLocal = graphPublic;
-		return graphLocal;
+		return new ImmutableGraph<Integer, Transport>(graphPublic);
 
 	}
 
