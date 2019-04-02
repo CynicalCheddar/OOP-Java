@@ -248,14 +248,17 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		 * @param callback callback when a move is chosen from the given valid
 		 *        moves, the game cannot
 		 */
-			//void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback);
+		//void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback);
 
-		////get the moves the player can make and return as a set
+		//get the moves the player can make and return as a set
 		ScotlandYardView view = this;
-		Consumer moveConsumer = currentPlayerInterface;
+		Consumer<Move> moveConsumer = move -> {
+			System.out.println("moveConsumer lambda thingy is hard and I don't get it. This is basically a placeholder");
+		};
 		Set<Move> moveSet = new HashSet<>();
-		//Consumer<Colour> moveConsumer = new Cons<>();
-		currentPlayerInterface.makeMove( view, 0, moveSet, moveConsumer);
+		currentPlayerInterface.makeMove( view, currentPlayer.location(), moveSet, moveConsumer);
+
+
 	}
 
 	@Override
@@ -361,8 +364,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	public int getCurrentRound() {
 		// TODO
 		return intCurrentRound;
-
-
 	}
 
 	@Override
