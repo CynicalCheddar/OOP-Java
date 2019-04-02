@@ -33,11 +33,11 @@ import uk.ac.bris.cs.scotlandyard.ui.controller.Debug;
 public class ScotlandYardModel implements ScotlandYardGame {
 	ArrayList<ScotlandYardPlayer> scotlandYardPlayers = new ArrayList<>();
 	ArrayList<Colour> detectiveColours = new ArrayList<>();
-	ArrayList<Colour> allColours = new ArrayList<>();
+
 	final Graph<Integer, Transport> graphPublic;
 	final List<Boolean> publicRounds;
 	List<PlayerConfiguration> publicPlayerConfigurations;
-	public int intCurrentRound = 0;
+	int intCurrentRound = 0;
 	ScotlandYardPlayer currentPlayer;
 	Player currentPlayerInterface;
 	int intCurrentPlayerIndex = 0;
@@ -45,14 +45,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 
 
-	void addcolours(){
-		allColours.add(RED);
-		allColours.add(BLUE);
-		allColours.add(BLACK);
-		allColours.add(BLUE);
-		allColours.add(YELLOW);
-		allColours.add(WHITE);
-	}
+
 	public ScotlandYardModel(List<Boolean> rounds, Graph<Integer, Transport> graph,
 			PlayerConfiguration mrX, PlayerConfiguration firstDetective,
 							 PlayerConfiguration... restOfTheDetectives) {
@@ -61,7 +54,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 			publicRounds = rounds;
 			graphPublic = graph;
-			addcolours();
 			//Creates a list of all of our player configurations, lets us do some iteration.
 			ArrayList<PlayerConfiguration> configurations = new ArrayList<>();
 			ArrayList<PlayerConfiguration> detectives = new ArrayList<>();
@@ -248,9 +240,18 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		 * @param callback callback when a move is chosen from the given valid
 		 *        moves, the game cannot
 		 */
-			//void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback);
-		currentPlayerInterface.makeMove(ScotlandYardView, 0, Set<Move>);
-		currentPlayerInterface.makeMove();
+		//void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback);
+
+		//get the moves the player can make and return as a set
+		ScotlandYardView view = this;
+		Consumer<Move> moveConsumer = move -> {
+			System.out.println("moveConsumer lambda thingy is hard and I don't get it. This is basically a placeholder");
+		};
+		Set<Move> moveSet = new HashSet<>();
+
+		currentPlayerInterface.makeMove( view, currentPlayer.location(), moveSet, moveConsumer);
+
+
 	}
 
 	@Override
@@ -356,8 +357,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	public int getCurrentRound() {
 		// TODO
 		return intCurrentRound;
-
-
 	}
 
 	@Override
