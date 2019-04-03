@@ -257,8 +257,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	@Override
 	//Gets a list of the colours of all players currently in the game
 	public List<Colour> getPlayers() {
-		// TODO
-
 		List<Colour> getPlayerList = new ArrayList<>();
 		for (ScotlandYardPlayer player : scotlandYardPlayers) {
 			getPlayerList.add(player.colour());
@@ -272,7 +270,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	@Override
 	// Right now this function just says that the detectives win if the game is over.
 	public Set<Colour> getWinningPlayers() {
-		// TODO
 		Set<Colour> winningColours = new HashSet<>();
 		if(isGameOver() == true){
 
@@ -287,7 +284,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	@Override
 	//Get the location of a specified player by colour. Return empty if the player is not in the game.
 	public Optional<Integer> getPlayerLocation(Colour colour) {
-		// TODO
 		boolean validPlayer = false;
 		for (ScotlandYardPlayer player : scotlandYardPlayers){
 			if(colour == player.colour()){
@@ -314,7 +310,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	// Gets the amount of tickets of a certain type owned by a certain -player. Return empty if the player doesn't exist.
 	@Override
 	public Optional<Integer> getPlayerTickets(Colour colour, Ticket ticket) {
-		// TODO
 		boolean validPlayer = false;
 		for (ScotlandYardPlayer player : scotlandYardPlayers){
 			if(colour == player.colour()){
@@ -388,28 +383,23 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	@Override
 	public Colour getCurrentPlayer() {
-
 		return (currentPlayer.colour());
 	}
 
 	@Override
 	public int getCurrentRound() {
-		// TODO
 		return intCurrentRound;
 	}
 
 	@Override
 	public List<Boolean> getRounds() {
-		// TODO
 		return(Collections.unmodifiableList(publicRounds));
 
 	}
 
 	@Override
 	public Graph<Integer, Transport> getGraph() {
-		// TODO
 		return new ImmutableGraph<Integer, Transport>(graphPublic);
-
 	}
 
 }
