@@ -5,7 +5,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import uk.ac.bris.cs.gamekit.graph.Graph;
+import uk.ac.bris.cs.gamekit.graph.*;
+
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
@@ -24,9 +25,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import uk.ac.bris.cs.gamekit.graph.Edge;
+
 import uk.ac.bris.cs.gamekit.graph.Graph;
-import uk.ac.bris.cs.gamekit.graph.ImmutableGraph;
 import uk.ac.bris.cs.scotlandyard.ui.controller.Debug;
 
 // TODO implement all methods and pass all tests
@@ -215,16 +215,25 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	//This subroutine increments the currently selected player that we will be dealing with.
 	//Loops around if it reaches the end of the array.
 	public void startRotate() {
-
+		System.out.println(intCurrentPlayerIndex);
+		System.out.println(currentPlayer.colour());
+		currentPlayer = scotlandYardPlayers.get(intCurrentPlayerIndex);
+		currentPlayerInterface = publicPlayerConfigurations.get(intCurrentPlayerIndex).player;
+		if(intCurrentPlayerIndex == 0 && currentPlayer.isMrX() == false){
+			throw new RuntimeException("mrX should play first");
+		}
 		if(intCurrentPlayerIndex > publicPlayerConfigurations.size() - 1){
 			intCurrentPlayerIndex = 0;
 		}
-		currentPlayer = scotlandYardPlayers.get(intCurrentPlayerIndex);
-		currentPlayerInterface = publicPlayerConfigurations.get(intCurrentPlayerIndex).player;
-
-		intCurrentPlayerIndex += 1; //Get ready to select the next player on the next cycle.
 		startMove();
 
+
+		if(intCurrentPlayerIndex < scotlandYardPlayers.size() - 1){
+			intCurrentPlayerIndex += 1; //Get ready to select the next player on the next cycle.
+			currentPlayer = scotlandYardPlayers.get(intCurrentPlayerIndex);
+			currentPlayerInterface = publicPlayerConfigurations.get(intCurrentPlayerIndex).player;
+			startRotate();
+		}
 	}
 
 	public void startMove(){
@@ -248,10 +257,36 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			System.out.println("moveConsumer lambda thingy is hard and I don't get it. This is basically a placeholder");
 		};
 		Set<Move> moveSet = new HashSet<>();
-
+		moveSet.addAll(generateMoves());
 		currentPlayerInterface.makeMove( view, currentPlayer.location(), moveSet, moveConsumer);
 
 
+	}
+
+	Set<Move> generateMoves(){
+
+		Set<Move> moveSet = new HashSet<>();
+
+		Collection<Edge<Integer, Transport>> connectedEdges = graphPublic.getEdgesFrom(graphPublic.getNode(currentPlayer.location()));
+
+		for(Edge<Integer, Transport> connectedEdge : connectedEdges){
+			// if the edge is a taxi link
+			if(connectedEdge.data() == Transport.TAXI){
+				moveSet.add(new TicketMove(currentPlayer.colour(), TAXI, connectedEdge.destination().value()));
+
+			}
+			// if the edge is a bus link
+			if(connectedEdge.data() == Transport.BUS){
+				moveSet.add(new TicketMove(currentPlayer.colour(), BUS, connectedEdge.destination().value()));
+			}
+			// if the edge is a train
+			if(connectedEdge.data() == Transport.UNDERGROUND){
+				moveSet.add(new TicketMove(currentPlayer.colour(), UNDERGROUND, connectedEdge.destination().value()));
+			}
+		}
+		System.out.print(moveSet);
+
+		return moveSet;
 	}
 
 	@Override
