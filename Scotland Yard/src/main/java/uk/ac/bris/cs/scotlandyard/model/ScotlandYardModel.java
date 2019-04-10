@@ -88,7 +88,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 
 			validateConfigurations(mrX, rounds, graph, configurations, detectives);
-			//validatePlayers(scotlandYardPlayers, mrXPlayer, configurations);
+			validatePlayers(scotlandYardPlayers, mrXPlayer, configurations);
 		//	validateGameOver();
 
 
@@ -181,7 +181,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 					mrXCount += 1;
 
 					if(!player.hasTickets(TAXI) ||!player.hasTickets(BUS) || !player.hasTickets(UNDERGROUND) || !player.hasTickets(SECRET) || !player.hasTickets(DOUBLE)){
-						throw new IllegalArgumentException("mrX is just gonna be caught you utter wibbly! He's got no tickets whatsoever");
+						//throw new IllegalArgumentException("mrX is just gonna be caught you utter wibbly! He's got no tickets whatsoever");
 					}
 					System.out.print(player.tickets());
 					if(!player.hasTickets(TAXI, 1) || !player.hasTickets(BUS, 2) || !player.hasTickets(UNDERGROUND, 3) || !player.hasTickets(SECRET, 5) || !player.hasTickets(DOUBLE, 4)){
@@ -191,7 +191,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				}
 				else if(player.isDetective()){
 					if(!player.hasTickets(TAXI) ||!player.hasTickets(BUS) || !player.hasTickets(UNDERGROUND)){
-						throw new IllegalArgumentException("mrX is just gonna get away, the detectives have no tickets!");
+					//	throw new IllegalArgumentException("mrX is just gonna get away, the detectives have no tickets!");
 					}
 				}
 			}
@@ -269,6 +269,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			boolean validMove = false;
 			if(move == null){
 				throw new NullPointerException();
+
 			}
 			if(move == new PassMove(currentPlayer.colour())){
 				throw new RuntimeException("Uhh I'm lost");
@@ -276,10 +277,17 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			for(Move mv : moveSet){
 				if(mv == move){
 					validMove = true;
+					System.out.println("_");
+					System.out.println("Our move is valid!");
 				}
 			}
+			if(moveSet.size() == 0){
+				validMove = true;
+			}
 			if(validMove == false){ //maybe we are not generating the right move set?
-				//throw new IllegalArgumentException();
+				System.out.println("_");
+				System.out.println("The moveset is:" + moveSet);
+			//	throw new IllegalArgumentException();
 			}
 		};
 
