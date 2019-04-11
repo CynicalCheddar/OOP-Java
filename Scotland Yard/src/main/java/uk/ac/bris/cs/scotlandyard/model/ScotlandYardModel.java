@@ -2,7 +2,8 @@ package uk.ac.bris.cs.scotlandyard.model;
 
 import java.util.*;
 
-import uk.ac.bris.cs.gamekit.graph.Graph;
+import uk.ac.bris.cs.gamekit.graph.*;
+
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonList;
@@ -18,9 +19,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import uk.ac.bris.cs.gamekit.graph.Edge;
+
 import uk.ac.bris.cs.gamekit.graph.Graph;
-import uk.ac.bris.cs.gamekit.graph.ImmutableGraph;
 import uk.ac.bris.cs.scotlandyard.ui.controller.Debug;
 
 // TODO implement all methods and pass all tests
@@ -32,6 +32,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	final List<Boolean> publicRounds;
 	List<PlayerConfiguration> publicPlayerConfigurations;
 	int intCurrentRound = 0;
+	int intMaxRounds;
 	ScotlandYardPlayer currentPlayer;
 	Player currentPlayerInterface;
 	int intCurrentPlayerIndex = 0;
@@ -45,7 +46,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 							 PlayerConfiguration... restOfTheDetectives) {
 
 
-
+			intMaxRounds = rounds.size();
 			publicRounds = rounds;
 			graphPublic = graph;
 			//Creates a list of all of our player configurations, lets us do some iteration.
@@ -174,7 +175,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 					mrXCount += 1;
 
 					if(!player.hasTickets(TAXI) ||!player.hasTickets(BUS) || !player.hasTickets(UNDERGROUND) || !player.hasTickets(SECRET) || !player.hasTickets(DOUBLE)){
-						throw new IllegalArgumentException("mrX is just gonna be caught you utter wibbly! He's got no tickets whatsoever");
+						//throw new IllegalArgumentException("mrX is just gonna be caught you utter wibbly! He's got no tickets whatsoever");
 					}
 					System.out.print(player.tickets());
 					if(!player.hasTickets(TAXI, 1) || !player.hasTickets(BUS, 2) || !player.hasTickets(UNDERGROUND, 3) || !player.hasTickets(SECRET, 5) || !player.hasTickets(DOUBLE, 4)){
@@ -184,7 +185,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				}
 				else if(player.isDetective()){
 					if(!player.hasTickets(TAXI) ||!player.hasTickets(BUS) || !player.hasTickets(UNDERGROUND)){
-						throw new IllegalArgumentException("mrX is just gonna get away, the detectives have no tickets!");
+					//	throw new IllegalArgumentException("mrX is just gonna get away, the detectives have no tickets!");
 					}
 				}
 			}
@@ -209,15 +210,30 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	//This subroutine increments the currently selected player that we will be dealing with.
 	//Loops around if it reaches the end of the array.
 	public void startRotate() {
+		for(ScotlandYardPlayer p : scotlandYardPlayers) {
+			currentPlayer = scotlandYardPlayers.get(intCurrentPlayerIndex);
+			currentPlayerInterface = publicPlayerConfigurations.get(intCurrentPlayerIndex).player;
+			if (intCurrentPlayerIndex == 0 && currentPlayer.isMrX() == false) {
+				throw new RuntimeException("mrX should play first");
+			}
+			if (intCurrentPlayerIndex > publicPlayerConfigurations.size() - 1) {
+				intCurrentPlayerIndex = 0;
+			}
+			startMove();
+			// If the player is not responding:
 
-		if(intCurrentPlayerIndex > publicPlayerConfigurations.size() - 1){
-			intCurrentPlayerIndex = 0;
+			// Iterate through the players and let them make their moves:
+			if (intCurrentPlayerIndex < scotlandYardPlayers.size() - 1) {
+				intCurrentPlayerIndex += 1; //Get ready to select the next player on the next cycle.
+				currentPlayer = scotlandYardPlayers.get(intCurrentPlayerIndex);
+				currentPlayerInterface = publicPlayerConfigurations.get(intCurrentPlayerIndex).player;
+			}
 		}
-		currentPlayer = scotlandYardPlayers.get(intCurrentPlayerIndex);
-		currentPlayerInterface = publicPlayerConfigurations.get(intCurrentPlayerIndex).player;
 
-		intCurrentPlayerIndex += 1; //Get ready to select the next player on the next cycle.
-		startMove();
+			intCurrentPlayerIndex = 0;
+			intCurrentRound += 1;
+			System.out.println(intCurrentRound);
+			System.out.println(intCurrentPlayerIndex);
 
 	}
 
@@ -238,16 +254,154 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 		//get the moves the player can make and return as a set
 		ScotlandYardView view = this;
-		Consumer<Move> moveConsumer = move -> {
-			System.out.println("moveConsumer lambda thingy is hard and I don't get it. This is basically a placeholder");
-		};
+
 		Set<Move> moveSet = new HashSet<>();
+		moveSet.addAll(generateMoves());
 
-		currentPlayerInterface.makeMove( view, currentPlayer.location(), moveSet, moveConsumer);
+		Consumer<Move> moveConsumer = move -> {
+			//Do a move?
+			boolean validMove = false;
+			if(move == null){
+				throw new NullPointerException();
 
+			}
+			if(move == new PassMove(currentPlayer.colour())){
+				throw new RuntimeException("Uhh I'm lost");
+			}
+			for(Move mv : moveSet){
+				if(mv == move){
+					validMove = true;
+					System.out.println("_");
+					System.out.println("Our move is valid!");
+				}
+			}
+			if(moveSet.size() == 0){
+				validMove = true;
+			}
+			if(validMove == false){ //maybe we are not generating the right move set?
+				System.out.println("_");
+				System.out.println("The moveset is:" + moveSet);
+			//	throw new IllegalArgumentException();
+			}
+		};
+
+
+
+			currentPlayerInterface.makeMove( view, currentPlayer.location(), moveSet, moveConsumer);
+
+
+		//Give back a move
 
 	}
 
+	Set<Move> generateMoves(){
+		Set<Move> moveSet = new HashSet<>();
+
+		Collection<Edge<Integer, Transport>> connectedEdges = graphPublic.getEdgesFrom(graphPublic.getNode(currentPlayer.location()));
+		for(Edge<Integer, Transport> connectedEdge : connectedEdges) {
+			//firstly, check that no other player is occupying the node that we're gonna look at:
+			if (nodeOccupied(connectedEdge.destination().value()) == false) {
+				// add a preliminary secret move if the player is mrX:
+				if (currentPlayer.isMrX() && currentPlayer.hasTickets(SECRET)) {
+					moveSet.add(new TicketMove(currentPlayer.colour(), SECRET, connectedEdge.destination().value()));
+					if (doubleMoveConditions()) {
+						moveSet.addAll(generateDoubleMoves(connectedEdge.destination().value(), (new TicketMove(currentPlayer.colour(), SECRET, connectedEdge.destination().value())))); // passing our current edge destination and our root move.
+					}
+				}
+				// if the edge is a taxi link
+				if (connectedEdge.data() == Transport.TAXI && currentPlayer.hasTickets(TAXI)) {
+					moveSet.add(new TicketMove(currentPlayer.colour(), TAXI, connectedEdge.destination().value()));
+					if (doubleMoveConditions()) {
+						moveSet.addAll(generateDoubleMoves(connectedEdge.destination().value(), (new TicketMove(currentPlayer.colour(), TAXI, connectedEdge.destination().value())))); // passing our current edge destination and our root move.
+					}
+				}
+				// if the edge is a bus link
+				if (connectedEdge.data() == Transport.BUS && currentPlayer.hasTickets(BUS)) {
+					moveSet.add(new TicketMove(currentPlayer.colour(), BUS, connectedEdge.destination().value()));
+					if (doubleMoveConditions()) {
+						moveSet.addAll(generateDoubleMoves(connectedEdge.destination().value(), (new TicketMove(currentPlayer.colour(), BUS, connectedEdge.destination().value())))); // passing our current edge destination and our root move.
+					}
+				}
+				// if the edge is a train
+				if (connectedEdge.data() == Transport.UNDERGROUND && currentPlayer.hasTickets(UNDERGROUND)) {
+					moveSet.add(new TicketMove(currentPlayer.colour(), UNDERGROUND, connectedEdge.destination().value()));
+					if (doubleMoveConditions()) {
+						moveSet.addAll(generateDoubleMoves(connectedEdge.destination().value(), (new TicketMove(currentPlayer.colour(), UNDERGROUND, connectedEdge.destination().value())))); // passing our current edge destination and our root move.
+					}
+				}
+			}
+		}
+		System.out.print(moveSet);
+		System.out.println(moveSet.size());
+		System.out.println(moveSet.size());
+		if(moveSet.size() == 0){
+			//if there are no moves that can be made, produce a pass move
+			moveSet.add(new PassMove(currentPlayer.colour()));
+		}
+		return moveSet;
+	}
+	Boolean doubleMoveConditions(){
+		if(currentPlayer.isMrX() == true && (intCurrentRound < intMaxRounds - 2) && currentPlayer.hasTickets(DOUBLE)){
+			return true;
+		}
+		else{
+			return false;
+		}
+	}
+	Set<Move> generateDoubleMoves(int nodeID, TicketMove rootMove){
+		Set<Move> doubleMoveSet = new HashSet<>();
+		TicketMove newMove;
+		DoubleMove doubleMove;
+		//take the ticket from a player, then give it back at the end:
+		currentPlayer.removeTicket(rootMove.ticket());
+		//get all the possible moves from the current location
+		Collection<Edge<Integer, Transport>> connectedEdges = graphPublic.getEdgesFrom(graphPublic.getNode(nodeID));
+		for(Edge<Integer, Transport> connectedEdge : connectedEdges) {
+			if (nodeOccupiedExcludingMrX(connectedEdge.destination().value()) == false) {
+				//Firstly add a possible secret move for the edge:
+				if (currentPlayer.isMrX() && currentPlayer.hasTickets(SECRET)) {
+					newMove = new TicketMove(currentPlayer.colour(), SECRET, connectedEdge.destination().value());
+					doubleMove = new DoubleMove(currentPlayer.colour(), rootMove, newMove);
+					doubleMoveSet.add(doubleMove);
+				}
+
+				if (connectedEdge.data() == Transport.TAXI && currentPlayer.hasTickets(TAXI)) {
+					newMove = new TicketMove(currentPlayer.colour(), TAXI, connectedEdge.destination().value());
+					doubleMove = new DoubleMove(currentPlayer.colour(), rootMove, newMove);
+					doubleMoveSet.add(doubleMove);
+				}
+				if (connectedEdge.data() == Transport.BUS && currentPlayer.hasTickets(BUS)) {
+					newMove = new TicketMove(currentPlayer.colour(), BUS, connectedEdge.destination().value());
+					doubleMove = new DoubleMove(currentPlayer.colour(), rootMove, newMove);
+					doubleMoveSet.add(doubleMove);
+				}
+				if (connectedEdge.data() == Transport.UNDERGROUND && currentPlayer.hasTickets(UNDERGROUND)) {
+					newMove = new TicketMove(currentPlayer.colour(), UNDERGROUND, connectedEdge.destination().value());
+					doubleMove = new DoubleMove(currentPlayer.colour(), rootMove, newMove);
+					doubleMoveSet.add(doubleMove);
+				}
+			}
+		}
+		currentPlayer.addTicket(rootMove.ticket());
+		return doubleMoveSet;
+	}
+
+	Boolean nodeOccupied(int nodeID){
+		for (ScotlandYardPlayer player : scotlandYardPlayers){
+			if(player.location() == nodeID){
+				return true;
+			}
+		}
+		return false;
+	}
+	Boolean nodeOccupiedExcludingMrX(int nodeID){
+		for (ScotlandYardPlayer player : scotlandYardPlayers){
+			if(player.location() == nodeID && player.isMrX() == false){
+				return true;
+			}
+		}
+		return false;
+	}
 	@Override
 	public Collection<Spectator> getSpectators() {
 		// TODO
