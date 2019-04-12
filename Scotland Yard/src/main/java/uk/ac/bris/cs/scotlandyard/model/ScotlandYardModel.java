@@ -1,9 +1,6 @@
 package uk.ac.bris.cs.scotlandyard.model;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import uk.ac.bris.cs.gamekit.graph.*;
 
@@ -17,10 +14,7 @@ import static java.util.Objects.requireNonNull;
 import static uk.ac.bris.cs.scotlandyard.model.Colour.*;
 import static uk.ac.bris.cs.scotlandyard.model.Ticket.*;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -420,8 +414,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	@Override
 	//Gets a list of the colours of all players currently in the game
 	public List<Colour> getPlayers() {
-		// TODO
-
 		List<Colour> getPlayerList = new ArrayList<>();
 		for (ScotlandYardPlayer player : scotlandYardPlayers) {
 			getPlayerList.add(player.colour());
@@ -429,13 +421,12 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 		final List<Colour> getPlayerListFinal = getPlayerList;
 		//throw new RuntimeException("Implement me");
-		return getPlayerListFinal;
+		return Collections.unmodifiableList(getPlayerListFinal);
 	}
 
 	@Override
 	// Right now this function just says that the detectives win if the game is over.
 	public Set<Colour> getWinningPlayers() {
-		// TODO
 		Set<Colour> winningColours = new HashSet<>();
 		if(isGameOver() == true){
 
@@ -443,14 +434,13 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				winningColours.add(colour);
 			}
 		}
-		return winningColours;
+		return Collections.unmodifiableSet(winningColours);
 
 	}
 
 	@Override
 	//Get the location of a specified player by colour. Return empty if the player is not in the game.
 	public Optional<Integer> getPlayerLocation(Colour colour) {
-		// TODO
 		boolean validPlayer = false;
 		for (ScotlandYardPlayer player : scotlandYardPlayers){
 			if(colour == player.colour()){
@@ -477,7 +467,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	// Gets the amount of tickets of a certain type owned by a certain -player. Return empty if the player doesn't exist.
 	@Override
 	public Optional<Integer> getPlayerTickets(Colour colour, Ticket ticket) {
-		// TODO
 		boolean validPlayer = false;
 		for (ScotlandYardPlayer player : scotlandYardPlayers){
 			if(colour == player.colour()){
@@ -497,11 +486,56 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		return Optional.of(null);
 	}
 
+	// Returns true if the player of a specified colour can't move.
+	public boolean isPlayerStuck(Colour colour) {
+		Collection<Edge<Integer, Transport>> edges = graphPublic.getEdgesFrom(graphPublic.getNode(getPlayerLocation(colour).get()));
+		if (getPlayerTickets(colour, TAXI).get() != 0) return false;
+		else if (getPlayerTickets(colour, BUS).get() != 0) {
+			for (Edge<Integer, Transport> edge : edges) {
+				if (edge.data() == Transport.BUS) return false;
+			}
+		}
+		else if (getPlayerTickets(colour, UNDERGROUND).get() != 0) {
+			for (Edge<Integer, Transport> edge : edges) {
+				if (edge.data() == Transport.UNDERGROUND) return false;
+			}
+		}
+		return true;
+	}
+
 	@Override
 	public boolean isGameOver() {
-		// TODO
-		return false;
+		// Game can't be over on round 0.
+		if (intCurrentRound == 0) return false;
 
+		// Does a detective share a space with Mr X?
+		for (Colour colour : detectiveColours) {
+			if (getPlayerLocation(colour) == getPlayerLocation(BLACK)) {
+				return true;
+			}
+		}
+
+		// Do any detectives have tickets remaining?
+		boolean ticketsRemaining = false;
+		for (Colour colour : detectiveColours) {
+			for (Ticket ticket : Ticket.values())
+			if (getPlayerTickets(colour, ticket).get() != 0) {
+				ticketsRemaining = true;
+			}
+		}
+		if (ticketsRemaining == false) return true;
+
+		// Are all the detectives stuck?
+		boolean detectivesStuck = true;
+		for (Colour colour : detectiveColours) {
+			if (isPlayerStuck(colour) == false) detectivesStuck = false;
+		}
+		if (detectivesStuck == true) return true;
+
+		// Is Mr X stuck?
+		if (isPlayerStuck(BLACK) == true) return true;
+
+		return false;
 	}
 
 	@Override
@@ -516,17 +550,13 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	@Override
 	public List<Boolean> getRounds() {
-		// TODO
-		return(publicRounds);
+		return(Collections.unmodifiableList(publicRounds));
 
 	}
 
 	@Override
 	public Graph<Integer, Transport> getGraph() {
-		// TODO
-		final Graph<Integer, Transport> graphLocal = graphPublic;
-		return graphLocal;
-
+		return new ImmutableGraph<Integer, Transport>(graphPublic);
 	}
 
 }
