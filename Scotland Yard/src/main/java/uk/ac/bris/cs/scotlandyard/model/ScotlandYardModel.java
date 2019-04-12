@@ -237,7 +237,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 
 			intCurrentPlayerIndex = 0;
-			intCurrentRound += 1;
+
 			System.out.println(intCurrentRound);
 			System.out.println(intCurrentPlayerIndex);
 
@@ -288,6 +288,9 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				System.out.println("_");
 				System.out.println("The moveset is:" + moveSet);
 			//	throw new IllegalArgumentException();
+			}
+			if(currentPlayer.isMrX()){
+				intCurrentRound += 1;
 			}
 		};
 
