@@ -47,7 +47,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	Ticket ticketTemp;
 	Boolean ticketTempGranted = true;
 	Collection<Spectator> publicSpectators;
-
+	boolean mrXWon = false;
 
 
 	public ScotlandYardModel(List<Boolean> rounds, Graph<Integer, Transport> graph,
@@ -278,6 +278,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	}
 
 	public void startMove(){
+		
 		/**
 		 * Called when the player is required to make a move as required by
 		 * the @link ScotlandYardGame}
@@ -487,7 +488,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		return doubleMoveSet;
 	}
 
-	Boolean nodeOccupied(int nodeID){
+	boolean nodeOccupied(int nodeID){
 		for (ScotlandYardPlayer player : scotlandYardPlayers){
 			if(player.location() == nodeID){
 				return true;
@@ -495,7 +496,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 		return false;
 	}
-	Boolean nodeOccupiedExcludingMrX(int nodeID){
+	boolean nodeOccupiedExcludingMrX(int nodeID){
 		for (ScotlandYardPlayer player : scotlandYardPlayers){
 			if(player.location() == nodeID && player.isMrX() == false){
 				return true;
@@ -520,14 +521,17 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	}
 
 	@Override
-	// Right now this function just says that the detectives win if the game is over.
+	// Returns the winning players as a list, empty list if no one has won.
 	public Set<Colour> getWinningPlayers() {
 		// TODO
 		Set<Colour> winningColours = new HashSet<>();
-		if(isGameOver() == true){
-
-			for (Colour colour : detectiveColours){
-				winningColours.add(colour);
+		if(isGameOver() == true) {
+			if (mrXWon == true) {
+				winningColours.add(BLACK);
+			} else {
+				for (Colour colour : detectiveColours) {
+					winningColours.add(colour);
+				}
 			}
 		}
 		return Collections.unmodifiableSet(winningColours);
@@ -604,7 +608,10 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	@Override
 	public boolean isGameOver() {
 		// Are we out of rounds?
-		if (intCurrentRound == intMaxRounds) return true;
+		if (intCurrentRound == intMaxRounds) {
+			mrXWon = true;
+			return true;
+		}
 
 		// Game can't be over on round 0.
 		if (intCurrentRound == 0) return false;
@@ -612,6 +619,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		// Does a detective share a space with Mr X?
 		for (Colour colour : detectiveColours) {
 			if (getPlayerLocation(colour) == getPlayerLocation(BLACK)) {
+				mrXWon = true;
 				return true;
 			}
 		}
@@ -624,17 +632,32 @@ public class ScotlandYardModel implements ScotlandYardGame {
 					ticketsRemaining = true;
 				}
 		}
-		if (ticketsRemaining == false) return true;
+		if (ticketsRemaining == false) {
+			mrXWon = true;
+			return true;
+		}
 
 		// Are all the detectives stuck?
 		boolean detectivesStuck = true;
 		for (Colour colour : detectiveColours) {
 			if (isPlayerStuck(colour) == false) detectivesStuck = false;
 		}
-		if (detectivesStuck == true) return true;
+		if (detectivesStuck == true) {
+			mrXWon = true;
+			return true;
+		}
 
-		// Is Mr X stuck?
-		// if (isPlayerStuck(BLACK) == true) return true;
+		// Is Mr X cornered?
+		/*boolean mrXCornered = true;
+		Collection<Edge<Integer, Transport>> edges = graphPublic.getEdgesFrom(graphPublic.getNode(getPlayerLocation(BLACK).get()));
+		for (Edge<Integer, Transport> edge : edges) {
+			boolean destinationOccupied = false;
+			for (Colour colour : detectiveColours) {
+				if (edge.destination().value() == getPlayerLocation(colour).get()) destinationOccupied = true;
+			}
+			if (destinationOccupied = false) mrXCornered = false;
+		}
+		if (mrXCornered == true) return true;*/
 
 		return false;
 	}
