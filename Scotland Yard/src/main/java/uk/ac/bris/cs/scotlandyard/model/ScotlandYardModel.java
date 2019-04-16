@@ -516,7 +516,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 		final List<Colour> getPlayerListFinal = getPlayerList;
 		//throw new RuntimeException("Implement me");
-		return getPlayerListFinal;
+		return Collections.unmodifiableList(getPlayerListFinal);
 	}
 
 	@Override
@@ -530,7 +530,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				winningColours.add(colour);
 			}
 		}
-		return winningColours; //NEED THE MATT CODE
+		return Collections.unmodifiableSet(winningColours);
 
 	}
 
@@ -584,11 +584,61 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		return Optional.of(null);
 	}
 
+	// Returns true if the player of a specified colour can't move.
+	public boolean isPlayerStuck(Colour colour) {
+		Collection<Edge<Integer, Transport>> edges = graphPublic.getEdgesFrom(graphPublic.getNode(getPlayerLocation(colour).get()));
+		if (getPlayerTickets(colour, TAXI).get() != 0) return false;
+		else if (getPlayerTickets(colour, BUS).get() != 0) {
+			for (Edge<Integer, Transport> edge : edges) {
+				if (edge.data() == Transport.BUS) return false;
+			}
+		}
+		else if (getPlayerTickets(colour, UNDERGROUND).get() != 0) {
+			for (Edge<Integer, Transport> edge : edges) {
+				if (edge.data() == Transport.UNDERGROUND) return false;
+			}
+		}
+		return true;
+	}
+
 	@Override
 	public boolean isGameOver() {
-		// TODO
-		return false;
+		if (true) return false;
 
+		// Are we out of rounds?
+		if (intCurrentRound == intMaxRounds - 1) return true;
+
+		// Game can't be over on round 0.
+		if (intCurrentRound == 0) return false;
+
+		// Does a detective share a space with Mr X?
+		for (Colour colour : detectiveColours) {
+			if (getPlayerLocation(colour) == getPlayerLocation(BLACK)) {
+				return true;
+			}
+		}
+
+		// Do any detectives have tickets remaining?
+		boolean ticketsRemaining = false;
+		for (Colour colour : detectiveColours) {
+			for (Ticket ticket : Ticket.values())
+				if (getPlayerTickets(colour, ticket).get() != 0) {
+					ticketsRemaining = true;
+				}
+		}
+		if (ticketsRemaining == false) return true;
+
+		// Are all the detectives stuck?
+		boolean detectivesStuck = true;
+		for (Colour colour : detectiveColours) {
+			if (isPlayerStuck(colour) == false) detectivesStuck = false;
+		}
+		if (detectivesStuck == true) return true;
+
+		// Is Mr X stuck?
+		if (isPlayerStuck(BLACK) == true) return true;
+
+		return false;
 	}
 
 	@Override
