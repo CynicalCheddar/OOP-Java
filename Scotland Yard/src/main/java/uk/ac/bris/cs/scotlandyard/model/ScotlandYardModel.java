@@ -1,7 +1,11 @@
 package uk.ac.bris.cs.scotlandyard.model;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
+import com.google.common.collect.ImmutableCollection;
 import uk.ac.bris.cs.gamekit.graph.*;
 
 import static java.util.Arrays.asList;
@@ -14,7 +18,10 @@ import static java.util.Objects.requireNonNull;
 import static uk.ac.bris.cs.scotlandyard.model.Colour.*;
 import static uk.ac.bris.cs.scotlandyard.model.Ticket.*;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -34,55 +41,58 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	int intCurrentRound = 0;
 	int intMaxRounds;
 	ScotlandYardPlayer currentPlayer;
+	ScotlandYardPlayer publicMrXPlayer;
 	Player currentPlayerInterface;
 	int intCurrentPlayerIndex = 0;
-
-
+	Ticket ticketTemp;
+	Boolean ticketTempGranted = true;
+	Collection<Spectator> publicSpectators;
 
 
 
 	public ScotlandYardModel(List<Boolean> rounds, Graph<Integer, Transport> graph,
-			PlayerConfiguration mrX, PlayerConfiguration firstDetective,
+							 PlayerConfiguration mrX, PlayerConfiguration firstDetective,
 							 PlayerConfiguration... restOfTheDetectives) {
 
 
-			intMaxRounds = rounds.size();
-			publicRounds = rounds;
-			graphPublic = graph;
-			//Creates a list of all of our player configurations, lets us do some iteration.
-			ArrayList<PlayerConfiguration> configurations = new ArrayList<>();
-			ArrayList<PlayerConfiguration> detectives = new ArrayList<>();
-			configurations.add(mrX);
-			configurations.add(firstDetective);
-			detectives.add(firstDetective);
-			detectiveColours.add(firstDetective.colour);
-			for (PlayerConfiguration configuration : restOfTheDetectives) {
+		ticketTemp = TAXI;
+		intMaxRounds = rounds.size();
+		publicRounds = rounds;
+		graphPublic = graph;
+		//Creates a list of all of our player configurations, lets us do some iteration.
+		ArrayList<PlayerConfiguration> configurations = new ArrayList<>();
+		ArrayList<PlayerConfiguration> detectives = new ArrayList<>();
+		configurations.add(mrX);
+		configurations.add(firstDetective);
+		detectives.add(firstDetective);
+		detectiveColours.add(firstDetective.colour);
+		for (PlayerConfiguration configuration : restOfTheDetectives) {
 
-				configurations.add(configuration);
-				detectives.add(configuration);
-				detectiveColours.add(configuration.colour);
-			}
-			//just making this a global variable because that passes the tests. I don't like it but it works.
-			publicPlayerConfigurations = configurations;
+			configurations.add(configuration);
+			detectives.add(configuration);
+			detectiveColours.add(configuration.colour);
+		}
+		//just making this a global variable because that passes the tests. I don't like it but it works.
+		publicPlayerConfigurations = configurations;
 
-			//Creates a list of all our player objects:
+		//Creates a list of all our player objects:
 
-			//adds mrX to our player list
-			ScotlandYardPlayer mrXPlayer = new ScotlandYardPlayer(mrX.player,mrX.colour, mrX.location, mrX.tickets);
-			scotlandYardPlayers.add(mrXPlayer);
+		//adds mrX to our player list
+		ScotlandYardPlayer mrXPlayer = new ScotlandYardPlayer(mrX.player,mrX.colour, mrX.location, mrX.tickets);
+		scotlandYardPlayers.add(mrXPlayer);
 
-			//adds the first detective to our player list
-			scotlandYardPlayers.add(new ScotlandYardPlayer(firstDetective.player,firstDetective.colour, firstDetective.location, firstDetective.tickets));
-			//adds the rest of the detectives to our player list
-			for (PlayerConfiguration detective : restOfTheDetectives) {
-				scotlandYardPlayers.add(new ScotlandYardPlayer(detective.player,detective.colour, detective.location, detective.tickets));
-			}
-
-
+		//adds the first detective to our player list
+		scotlandYardPlayers.add(new ScotlandYardPlayer(firstDetective.player,firstDetective.colour, firstDetective.location, firstDetective.tickets));
+		//adds the rest of the detectives to our player list
+		for (PlayerConfiguration detective : restOfTheDetectives) {
+			scotlandYardPlayers.add(new ScotlandYardPlayer(detective.player,detective.colour, detective.location, detective.tickets));
+		}
 
 
-			validateConfigurations(mrX, rounds, graph, configurations, detectives);
-			validatePlayers(scotlandYardPlayers, mrXPlayer, configurations);
+
+		publicMrXPlayer = mrXPlayer;
+		validateConfigurations(mrX, rounds, graph, configurations, detectives);
+		validatePlayers(scotlandYardPlayers, mrXPlayer, configurations);
 		//	validateGameOver();
 
 
@@ -159,52 +169,82 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	}
 
 
-		public void validatePlayers(List<ScotlandYardPlayer> scotlandYardPlayerList, ScotlandYardPlayer mrXPlayer, List<PlayerConfiguration> playerConfigurations){
-			// We need to set up each player with their tickets
-			//Tests the tickets owned by each detective
-			int mrXCount = 0;
-			for(ScotlandYardPlayer player : scotlandYardPlayerList){
-				if(player.hasTickets(DOUBLE) && player.isDetective()){
-					throw new IllegalArgumentException("Yer bastidge, yer bleedin worm! By joh! No detective should have a double ticket");
-				}
-				if(player.hasTickets(SECRET) && player.isDetective()){
-					throw new IllegalArgumentException("The name's Bond... James Bond... but I shouldn't have a secret ticket");
-				}
+	public void validatePlayers(List<ScotlandYardPlayer> scotlandYardPlayerList, ScotlandYardPlayer mrXPlayer, List<PlayerConfiguration> playerConfigurations){
+		// We need to set up each player with their tickets
+		//Tests the tickets owned by each detective
+		int mrXCount = 0;
+		for(ScotlandYardPlayer player : scotlandYardPlayerList){
+			if(player.hasTickets(DOUBLE) && player.isDetective()){
+				throw new IllegalArgumentException("Yer bastidge, yer bleedin worm! By joh! No detective should have a double ticket");
+			}
+			if(player.hasTickets(SECRET) && player.isDetective()){
+				throw new IllegalArgumentException("The name's Bond... James Bond... but I shouldn't have a secret ticket");
+			}
 
-				if(player.isMrX()){
-					mrXCount += 1;
+			if(player.isMrX()){
+				mrXCount += 1;
 
-					if(!player.hasTickets(TAXI) ||!player.hasTickets(BUS) || !player.hasTickets(UNDERGROUND) || !player.hasTickets(SECRET) || !player.hasTickets(DOUBLE)){
-						//throw new IllegalArgumentException("mrX is just gonna be caught you utter wibbly! He's got no tickets whatsoever");
-					}
-					System.out.print(player.tickets());
-					if(!player.hasTickets(TAXI, 1) || !player.hasTickets(BUS, 2) || !player.hasTickets(UNDERGROUND, 3) || !player.hasTickets(SECRET, 5) || !player.hasTickets(DOUBLE, 4)){
-
-						//throw new IllegalArgumentException("mrX has not been dealt the correct amount of cards. I call shenanigans here!");
-					}
+				if(!player.hasTickets(TAXI) ||!player.hasTickets(BUS) || !player.hasTickets(UNDERGROUND) || !player.hasTickets(SECRET) || !player.hasTickets(DOUBLE)){
+					//throw new IllegalArgumentException("mrX is just gonna be caught you utter wibbly! He's got no tickets whatsoever");
 				}
-				else if(player.isDetective()){
-					if(!player.hasTickets(TAXI) ||!player.hasTickets(BUS) || !player.hasTickets(UNDERGROUND)){
+				System.out.print(player.tickets());
+				if(!player.hasTickets(TAXI, 1) || !player.hasTickets(BUS, 2) || !player.hasTickets(UNDERGROUND, 3) || !player.hasTickets(SECRET, 5) || !player.hasTickets(DOUBLE, 4)){
+
+					//throw new IllegalArgumentException("mrX has not been dealt the correct amount of cards. I call shenanigans here!");
+				}
+			}
+			else if(player.isDetective()){
+				if(!player.hasTickets(TAXI) ||!player.hasTickets(BUS) || !player.hasTickets(UNDERGROUND)){
 					//	throw new IllegalArgumentException("mrX is just gonna get away, the detectives have no tickets!");
-					}
 				}
 			}
-			if(mrXCount > 1){
-				throw new IllegalArgumentException("There's some sort of criminal ring going on, there's more than one mrX!");
-			}
+		}
+		if(mrXCount > 1){
+			throw new IllegalArgumentException("There's some sort of criminal ring going on, there's more than one mrX!");
+		}
 	}
 
 	@Override
 	public void registerSpectator(Spectator spectator) {
 		// TODO
-		throw new RuntimeException("Implement me");
+
+		boolean canAdd = true;
+		if(spectator == null){
+			throw new NullPointerException("You aint got no spectator you bastard!");
+		}
+		else{
+			//Firstly check all of the spectators currently in our collection. Make sure that we're not adding a duplicate
+			for(Spectator s : publicSpectators){
+				if(s == spectator){
+					canAdd = false;
+				}
+			}
+			if(canAdd){
+				publicSpectators.add(spectator);
+			}
+		}
+
 	}
 
 	@Override
 	public void unregisterSpectator(Spectator spectator) {
 		// TODO
-		throw new RuntimeException("Implement me");
+		if(spectator == null){
+			throw new NullPointerException("You can't unregister a spectator that doesn't exist, you fool!");
+		}
+		else{
+			throw new RuntimeException("Implement me");
+		}
+
 	}
+
+	@Override
+	public Collection<Spectator> getSpectators() {
+		// TODO
+		//return new ImmutableCollection<Spectator>(publicSpectators);
+		return publicSpectators;
+	}
+
 
 	@Override
 	//This subroutine increments the currently selected player that we will be dealing with.
@@ -230,10 +270,10 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			}
 		}
 
-			intCurrentPlayerIndex = 0;
-			intCurrentRound += 1;
-			System.out.println(intCurrentRound);
-			System.out.println(intCurrentPlayerIndex);
+		intCurrentPlayerIndex = 0;
+
+		System.out.println(intCurrentRound);
+		System.out.println(intCurrentPlayerIndex);
 
 	}
 
@@ -279,15 +319,76 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				validMove = true;
 			}
 			if(validMove == false){ //maybe we are not generating the right move set?
-				System.out.println("_");
-				System.out.println("The moveset is:" + moveSet);
-			//	throw new IllegalArgumentException();
+
+				//	throw new IllegalArgumentException();
+			}
+			// if our move is valid, do the shenanigans with the tickets:
+
+			//currentPlayer.removeTicket();
+			int intDestination = 0;
+			String strDestination = move.toString().replaceAll("\\D+","");
+			System.out.println("Our destination is " + strDestination);
+			if(strDestination.length() > 0){
+				intDestination = Integer.parseInt(strDestination);
+			}
+
+			// FOR THE DOUBLE MOVES, CREATE AN ARRAY OF TICKETS AND SUBTRACT BOTH. USE WEIRD CASES TOO LIKE TAXITAXI AND BUSBUS
+			// LOOK, I GET THAT THIS IS HORRIBLE BUT THIS FUNKING MESS OF SPAGHETTI CODE IS ACTUALLY PASSING THE BLOODY TESTS
+			System.out.println(move.toString());
+
+			if(move.toString().contains("TAXI")){
+
+				currentPlayer.removeTicket(TAXI);
+				ticketTempGranted = true;
+				ticketTemp = TAXI;
+				currentPlayer.location(intDestination);
+
+
+			}
+			if(move.toString().contains("BUS")){
+
+				currentPlayer.removeTicket(BUS);
+				ticketTempGranted = true;
+				ticketTemp = BUS;
+				currentPlayer.location(intDestination);
+			}
+			if(move.toString().contains("UNDERGROUND")){
+
+				currentPlayer.removeTicket(UNDERGROUND);
+				ticketTempGranted = true;
+				ticketTemp = UNDERGROUND;
+				currentPlayer.location(intDestination);
+
+			}
+			if(move.toString().contains("Pass")){
+
+				ticketTempGranted = false;
+				currentPlayer.location(currentPlayer.location());
+			}
+			if(move.toString().contains("Double")){
+
+				currentPlayer.removeTicket(DOUBLE);
+				ticketTempGranted = false;
+				//baso we're just gonna cheat and read the last number from the string
+				String[] destinations = move.toString().split("->");
+				String doubleDestination = destinations[2].replace("]", "");
+				System.out.println("Destinations: " + doubleDestination);
+				intDestination = Integer.parseInt(doubleDestination);
+				currentPlayer.location(intDestination);
+				//currentPlayer.location(intDestination);
+			}
+			if(currentPlayer.isMrX()){
+				intCurrentRound += 1;
+				ticketTempGranted = false;
 			}
 		};
 
 
 
-			currentPlayerInterface.makeMove( view, currentPlayer.location(), moveSet, moveConsumer);
+		currentPlayerInterface.makeMove( view, currentPlayer.location(), moveSet, moveConsumer);
+		if(ticketTempGranted){
+			publicMrXPlayer.addTicket(ticketTemp);
+		}
 
 
 		//Give back a move
@@ -402,15 +503,12 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 		return false;
 	}
-	@Override
-	public Collection<Spectator> getSpectators() {
-		// TODO
-		throw new RuntimeException("Implement me");
-	}
 
 	@Override
 	//Gets a list of the colours of all players currently in the game
 	public List<Colour> getPlayers() {
+		// TODO
+
 		List<Colour> getPlayerList = new ArrayList<>();
 		for (ScotlandYardPlayer player : scotlandYardPlayers) {
 			getPlayerList.add(player.colour());
@@ -418,12 +516,13 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 		final List<Colour> getPlayerListFinal = getPlayerList;
 		//throw new RuntimeException("Implement me");
-		return Collections.unmodifiableList(getPlayerListFinal);
+		return getPlayerListFinal;
 	}
 
 	@Override
 	// Right now this function just says that the detectives win if the game is over.
 	public Set<Colour> getWinningPlayers() {
+		// TODO
 		Set<Colour> winningColours = new HashSet<>();
 		if(isGameOver() == true){
 
@@ -431,13 +530,14 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				winningColours.add(colour);
 			}
 		}
-		return Collections.unmodifiableSet(winningColours);
+		return winningColours; //NEED THE MATT CODE
 
 	}
 
 	@Override
 	//Get the location of a specified player by colour. Return empty if the player is not in the game.
 	public Optional<Integer> getPlayerLocation(Colour colour) {
+		// TODO
 		boolean validPlayer = false;
 		for (ScotlandYardPlayer player : scotlandYardPlayers){
 			if(colour == player.colour()){
@@ -464,6 +564,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	// Gets the amount of tickets of a certain type owned by a certain -player. Return empty if the player doesn't exist.
 	@Override
 	public Optional<Integer> getPlayerTickets(Colour colour, Ticket ticket) {
+		// TODO
 		boolean validPlayer = false;
 		for (ScotlandYardPlayer player : scotlandYardPlayers){
 			if(colour == player.colour()){
@@ -483,59 +584,11 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		return Optional.of(null);
 	}
 
-	// Returns true if the player of a specified colour can't move.
-	public boolean isPlayerStuck(Colour colour) {
-		Collection<Edge<Integer, Transport>> edges = graphPublic.getEdgesFrom(graphPublic.getNode(getPlayerLocation(colour).get()));
-		if (getPlayerTickets(colour, TAXI).get() != 0) return false;
-		else if (getPlayerTickets(colour, BUS).get() != 0) {
-			for (Edge<Integer, Transport> edge : edges) {
-				if (edge.data() == Transport.BUS) return false;
-			}
-		}
-		else if (getPlayerTickets(colour, UNDERGROUND).get() != 0) {
-			for (Edge<Integer, Transport> edge : edges) {
-				if (edge.data() == Transport.UNDERGROUND) return false;
-			}
-		}
-		return true;
-	}
-
 	@Override
 	public boolean isGameOver() {
-		// Are we out of rounds?
-		if (intCurrentRound == intMaxRounds - 1) return true;
-
-		// Game can't be over on round 0.
-		if (intCurrentRound == 0) return false;
-
-		// Does a detective share a space with Mr X?
-		for (Colour colour : detectiveColours) {
-			if (getPlayerLocation(colour) == getPlayerLocation(BLACK)) {
-				return true;
-			}
-		}
-
-		// Do any detectives have tickets remaining?
-		boolean ticketsRemaining = false;
-		for (Colour colour : detectiveColours) {
-			for (Ticket ticket : Ticket.values())
-			if (getPlayerTickets(colour, ticket).get() != 0) {
-				ticketsRemaining = true;
-			}
-		}
-		if (ticketsRemaining == false) return true;
-
-		// Are all the detectives stuck?
-		boolean detectivesStuck = true;
-		for (Colour colour : detectiveColours) {
-			if (isPlayerStuck(colour) == false) detectivesStuck = false;
-		}
-		if (detectivesStuck == true) return true;
-
-		// Is Mr X stuck?
-		if (isPlayerStuck(BLACK) == true) return true;
-
+		// TODO
 		return false;
+
 	}
 
 	@Override
@@ -550,13 +603,17 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	@Override
 	public List<Boolean> getRounds() {
+		// TODO
 		return(Collections.unmodifiableList(publicRounds));
 
 	}
 
 	@Override
 	public Graph<Integer, Transport> getGraph() {
+		// TODO
 		return new ImmutableGraph<Integer, Transport>(graphPublic);
+
 	}
 
 }
+
