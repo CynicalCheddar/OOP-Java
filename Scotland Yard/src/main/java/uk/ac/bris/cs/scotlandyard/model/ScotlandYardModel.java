@@ -603,10 +603,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	@Override
 	public boolean isGameOver() {
-		if (true) return false;
-
 		// Are we out of rounds?
-		if (intCurrentRound == intMaxRounds - 1) return true;
+		if (intCurrentRound == intMaxRounds) return true;
 
 		// Game can't be over on round 0.
 		if (intCurrentRound == 0) return false;
@@ -636,7 +634,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		if (detectivesStuck == true) return true;
 
 		// Is Mr X stuck?
-		if (isPlayerStuck(BLACK) == true) return true;
+		// if (isPlayerStuck(BLACK) == true) return true;
 
 		return false;
 	}
