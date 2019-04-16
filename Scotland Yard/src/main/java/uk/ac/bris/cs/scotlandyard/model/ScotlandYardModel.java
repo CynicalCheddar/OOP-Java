@@ -502,6 +502,9 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	@Override
 	public boolean isGameOver() {
+		// Are we out of rounds?
+		if (intCurrentRound == intMaxRounds - 1) return true;
+
 		// Game can't be over on round 0.
 		if (intCurrentRound == 0) return false;
 
