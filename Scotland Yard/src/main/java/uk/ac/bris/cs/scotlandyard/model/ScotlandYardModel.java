@@ -104,7 +104,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	public void validateGameOver(){
 		if(isGameOver() == true){
-			throw new IllegalArgumentException("Fookin ell the game's already over!");
+			throw new IllegalStateException("Fookin ell the game's already over!");
 		}
 	}
 
@@ -242,14 +242,14 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	public Collection<Spectator> getSpectators() {
 		// TODO
 		//return new ImmutableCollection<Spectator>(publicSpectators);
-		return publicSpectators;
+		return Collections.unmodifiableCollection(publicSpectators);
 	}
-
 
 	@Override
 	//This subroutine increments the currently selected player that we will be dealing with.
 	//Loops around if it reaches the end of the array.
 	public void startRotate() {
+
 		for(ScotlandYardPlayer p : scotlandYardPlayers) {
 			currentPlayer = scotlandYardPlayers.get(intCurrentPlayerIndex);
 			currentPlayerInterface = publicPlayerConfigurations.get(intCurrentPlayerIndex).player;
@@ -259,6 +259,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			if (intCurrentPlayerIndex > publicPlayerConfigurations.size() - 1) {
 				intCurrentPlayerIndex = 0;
 			}
+
 			startMove();
 			// If the player is not responding:
 
@@ -278,7 +279,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	}
 
 	public void startMove(){
-		
+
 		/**
 		 * Called when the player is required to make a move as required by
 		 * the @link ScotlandYardGame}
@@ -591,13 +592,18 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	// Returns true if the player of a specified colour can't move.
 	public boolean isPlayerStuck(Colour colour) {
 		Collection<Edge<Integer, Transport>> edges = graphPublic.getEdgesFrom(graphPublic.getNode(getPlayerLocation(colour).get()));
+		// Can they move via secret?
+		if (getPlayerTickets(colour, SECRET).get() != 0) return false;
+		// Can they move via taxi?
 		if (getPlayerTickets(colour, TAXI).get() != 0) return false;
-		else if (getPlayerTickets(colour, BUS).get() != 0) {
+		// Can they move via bus?
+		if (getPlayerTickets(colour, BUS).get() != 0) {
 			for (Edge<Integer, Transport> edge : edges) {
 				if (edge.data() == Transport.BUS) return false;
 			}
 		}
-		else if (getPlayerTickets(colour, UNDERGROUND).get() != 0) {
+		// Can they move via underground?
+		if (getPlayerTickets(colour, UNDERGROUND).get() != 0) {
 			for (Edge<Integer, Transport> edge : edges) {
 				if (edge.data() == Transport.UNDERGROUND) return false;
 			}
@@ -616,12 +622,9 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		// Game can't be over on round 0.
 		if (intCurrentRound == 0) return false;
 
-		// Does a detective share a space with Mr X?
+		// Is Mr X Captured?
 		for (Colour colour : detectiveColours) {
-			if (getPlayerLocation(colour) == getPlayerLocation(BLACK)) {
-				mrXWon = true;
-				return true;
-			}
+			if (getPlayerLocation(colour) == getPlayerLocation(BLACK)) return true;
 		}
 
 		// Do any detectives have tickets remaining?
@@ -648,16 +651,14 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 
 		// Is Mr X cornered?
-		/*boolean mrXCornered = true;
-		Collection<Edge<Integer, Transport>> edges = graphPublic.getEdgesFrom(graphPublic.getNode(getPlayerLocation(BLACK).get()));
+		/*Collection<Edge<Integer, Transport>> edges = graphPublic.getEdgesFrom(graphPublic.getNode(getPlayerLocation(BLACK).get()));
 		for (Edge<Integer, Transport> edge : edges) {
 			boolean destinationOccupied = false;
 			for (Colour colour : detectiveColours) {
 				if (edge.destination().value() == getPlayerLocation(colour).get()) destinationOccupied = true;
 			}
-			if (destinationOccupied = false) mrXCornered = false;
-		}
-		if (mrXCornered == true) return true;*/
+			if (destinationOccupied == false) return false;
+		}*/
 
 		return false;
 	}
