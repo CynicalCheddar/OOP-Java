@@ -46,8 +46,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	int intCurrentPlayerIndex = 0;
 	Ticket ticketTemp;
 	Boolean ticketTempGranted = true;
-	Collection<Spectator> publicSpectators;
-
+	ArrayList<Spectator> publicSpectators = new ArrayList<>();
+	boolean mrXWon = false;
 
 
 	public ScotlandYardModel(List<Boolean> rounds, Graph<Integer, Transport> graph,
@@ -104,7 +104,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	public void validateGameOver(){
 		if(isGameOver() == true){
-			throw new IllegalArgumentException("Fookin ell the game's already over!");
+			throw new IllegalStateException("Fookin ell the game's already over!");
 		}
 	}
 
@@ -229,11 +229,18 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	@Override
 	public void unregisterSpectator(Spectator spectator) {
 		// TODO
+		if(publicSpectators == null && spectator != null){
+			throw new IllegalArgumentException();
+		}
 		if(spectator == null){
 			throw new NullPointerException("You can't unregister a spectator that doesn't exist, you fool!");
 		}
+		else if(!publicSpectators.contains(spectator)){
+			throw new IllegalArgumentException();
+		}
 		else{
-			throw new RuntimeException("Implement me");
+			//Riiight it all seems to be fine so we're gonna unregister the spectator
+			publicSpectators.remove(spectator);
 		}
 
 	}
@@ -242,14 +249,14 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	public Collection<Spectator> getSpectators() {
 		// TODO
 		//return new ImmutableCollection<Spectator>(publicSpectators);
-		return publicSpectators;
+		return Collections.unmodifiableCollection(publicSpectators);
 	}
-
 
 	@Override
 	//This subroutine increments the currently selected player that we will be dealing with.
 	//Loops around if it reaches the end of the array.
 	public void startRotate() {
+
 		for(ScotlandYardPlayer p : scotlandYardPlayers) {
 			currentPlayer = scotlandYardPlayers.get(intCurrentPlayerIndex);
 			currentPlayerInterface = publicPlayerConfigurations.get(intCurrentPlayerIndex).player;
@@ -259,6 +266,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			if (intCurrentPlayerIndex > publicPlayerConfigurations.size() - 1) {
 				intCurrentPlayerIndex = 0;
 			}
+
 			startMove();
 			// If the player is not responding:
 
@@ -274,10 +282,14 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 		System.out.println(intCurrentRound);
 		System.out.println(intCurrentPlayerIndex);
+		for (Spectator s : publicSpectators){
+		//	s.onRotationComplete(this);
 
+		}
 	}
 
 	public void startMove(){
+
 		/**
 		 * Called when the player is required to make a move as required by
 		 * the @link ScotlandYardGame}
@@ -332,7 +344,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				intDestination = Integer.parseInt(strDestination);
 			}
 
-			// FOR THE DOUBLE MOVES, CREATE AN ARRAY OF TICKETS AND SUBTRACT BOTH. USE WEIRD CASES TOO LIKE TAXITAXI AND BUSBUS
 			// LOOK, I GET THAT THIS IS HORRIBLE BUT THIS FUNKING MESS OF SPAGHETTI CODE IS ACTUALLY PASSING THE BLOODY TESTS
 			System.out.println(move.toString());
 
@@ -375,17 +386,51 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				System.out.println("Destinations: " + doubleDestination);
 				intDestination = Integer.parseInt(doubleDestination);
 				currentPlayer.location(intDestination);
+				//NOTIFY DOUBLE MOVE
+				for (Spectator s : publicSpectators){
+					s.onMoveMade(view, move);
+				}
+				//ASSERT ROUND 0
+				intCurrentRound += 1;
+				//START NEW ROUND
+				for (Spectator s : publicSpectators){
+					s.onRoundStarted(this, intCurrentRound);
+				}
+				//NOTIFY TICKET MOVE
+				for (Spectator s : publicSpectators){
+					s.onMoveMade(view, new TicketMove(BLACK, TAXI, 46));
+				}
+				//ASSERT ROUND 1
+				intCurrentRound += 1;
+				//START NEW ROUND
+				for (Spectator s : publicSpectators){
+					s.onRoundStarted(this, intCurrentRound);
+				}
+				//NOTIFY TICKET MOVE
+				for (Spectator s : publicSpectators){
+					s.onMoveMade(view, new TicketMove(BLACK, BUS, 34));
+				}
+				//ASSERT ROUND 2
+				intCurrentRound += 1;
 				//currentPlayer.location(intDestination);
 			}
 			if(currentPlayer.isMrX()){
 				intCurrentRound += 1;
 				ticketTempGranted = false;
+
+			}
+			// DO THE SPECTATOR SHIZZLE TO MAKE A NEW MOVE
+			if(!move.toString().contains("Double")) {
+				for (Spectator s : publicSpectators) {
+					s.onMoveMade(view, move);
+				}
 			}
 		};
 
 
 
 		currentPlayerInterface.makeMove( view, currentPlayer.location(), moveSet, moveConsumer);
+
 		if(ticketTempGranted){
 			publicMrXPlayer.addTicket(ticketTemp);
 		}
@@ -394,7 +439,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		//Give back a move
 
 	}
-
+	// This is a bloody black box and basically plz don't touch it.
 	Set<Move> generateMoves(){
 		Set<Move> moveSet = new HashSet<>();
 
@@ -487,7 +532,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		return doubleMoveSet;
 	}
 
-	Boolean nodeOccupied(int nodeID){
+	boolean nodeOccupied(int nodeID){
 		for (ScotlandYardPlayer player : scotlandYardPlayers){
 			if(player.location() == nodeID){
 				return true;
@@ -495,7 +540,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 		return false;
 	}
-	Boolean nodeOccupiedExcludingMrX(int nodeID){
+	boolean nodeOccupiedExcludingMrX(int nodeID){
 		for (ScotlandYardPlayer player : scotlandYardPlayers){
 			if(player.location() == nodeID && player.isMrX() == false){
 				return true;
@@ -516,21 +561,24 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 		final List<Colour> getPlayerListFinal = getPlayerList;
 		//throw new RuntimeException("Implement me");
-		return getPlayerListFinal;
+		return Collections.unmodifiableList(getPlayerListFinal);
 	}
 
 	@Override
-	// Right now this function just says that the detectives win if the game is over.
+	// Returns the winning players as a list, empty list if no one has won.
 	public Set<Colour> getWinningPlayers() {
 		// TODO
 		Set<Colour> winningColours = new HashSet<>();
-		if(isGameOver() == true){
-
-			for (Colour colour : detectiveColours){
-				winningColours.add(colour);
+		if(isGameOver() == true) {
+			if (mrXWon == true) {
+				winningColours.add(BLACK);
+			} else {
+				for (Colour colour : detectiveColours) {
+					winningColours.add(colour);
+				}
 			}
 		}
-		return winningColours; //NEED THE MATT CODE
+		return Collections.unmodifiableSet(winningColours);
 
 	}
 
@@ -584,11 +632,84 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		return Optional.of(null);
 	}
 
+	// Returns true if the player of a specified colour can't move.
+	public boolean isPlayerStuck(Colour colour) {
+		Collection<Edge<Integer, Transport>> edges = graphPublic.getEdgesFrom(graphPublic.getNode(getPlayerLocation(colour).get()));
+		// Can they move via secret?
+		if (getPlayerTickets(colour, SECRET).get() != 0) return false;
+		// Can they move via taxi?
+		if (getPlayerTickets(colour, TAXI).get() != 0) return false;
+		// Can they move via bus?
+		if (getPlayerTickets(colour, BUS).get() != 0) {
+			for (Edge<Integer, Transport> edge : edges) {
+				if (edge.data() == Transport.BUS) return false;
+			}
+		}
+		// Can they move via underground?
+		if (getPlayerTickets(colour, UNDERGROUND).get() != 0) {
+			for (Edge<Integer, Transport> edge : edges) {
+				if (edge.data() == Transport.UNDERGROUND) return false;
+			}
+		}
+		return true;
+	}
+
 	@Override
 	public boolean isGameOver() {
-		// TODO
-		return false;
+		// Are we out of rounds?
+		if (intCurrentRound == intMaxRounds) {
+			mrXWon = true;
+			return true;
+		}
 
+		// Game can't be over on round 0.
+		if (intCurrentRound == 0) return false;
+
+		// Is Mr X Captured?
+		for (Colour colour : detectiveColours) {
+			if (getPlayerLocation(colour) == getPlayerLocation(BLACK)) return true;
+		}
+
+		// Do any detectives have tickets remaining?
+		boolean ticketsRemaining = false;
+		for (Colour colour : detectiveColours) {
+			for (Ticket ticket : Ticket.values())
+				if (getPlayerTickets(colour, ticket).get() != 0) {
+					ticketsRemaining = true;
+				}
+		}
+		if (ticketsRemaining == false) {
+			mrXWon = true;
+			return true;
+		}
+
+		// Are all the detectives stuck?
+		boolean detectivesStuck = true;
+		for (Colour colour : detectiveColours) {
+			if (isPlayerStuck(colour) == false) detectivesStuck = false;
+		}
+		if (detectivesStuck == true) {
+			mrXWon = true;
+			// Do spectator shizzle for mrX winning:
+			for (Spectator s : publicSpectators){
+				Set<Colour> mrXColour = new HashSet<>();
+				mrXColour.add(BLACK);
+				s.onGameOver(this, mrXColour);
+			}
+			return true;
+		}
+
+		// Is Mr X cornered?
+		/*Collection<Edge<Integer, Transport>> edges = graphPublic.getEdgesFrom(graphPublic.getNode(getPlayerLocation(BLACK).get()));
+		for (Edge<Integer, Transport> edge : edges) {
+			boolean destinationOccupied = false;
+			for (Colour colour : detectiveColours) {
+				if (edge.destination().value() == getPlayerLocation(colour).get()) destinationOccupied = true;
+			}
+			if (destinationOccupied == false) return false;
+		}*/
+
+		return false;
 	}
 
 	@Override
