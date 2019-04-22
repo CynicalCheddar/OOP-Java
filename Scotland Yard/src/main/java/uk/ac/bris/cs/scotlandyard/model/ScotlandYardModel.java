@@ -446,7 +446,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		Collection<Edge<Integer, Transport>> connectedEdges = graphPublic.getEdgesFrom(graphPublic.getNode(currentPlayer.location()));
 		for(Edge<Integer, Transport> connectedEdge : connectedEdges) {
 			//firstly, check that no other player is occupying the node that we're gonna look at:
-			if (nodeOccupied(connectedEdge.destination().value()) == false) {
+			if (nodeOccupiedExcludingMrX(connectedEdge.destination().value()) == false) {
 				// add a preliminary secret move if the player is mrX:
 				if (currentPlayer.isMrX() && currentPlayer.hasTickets(SECRET)) {
 					moveSet.add(new TicketMove(currentPlayer.colour(), SECRET, connectedEdge.destination().value()));
