@@ -136,8 +136,14 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 
 
-		//Check that all the detectives have references to their ticket types:
-		for (PlayerConfiguration detective : detectives) {
+		//Check that all the players have references to their ticket types:
+		for (PlayerConfiguration player : publicPlayerConfigurations) {
+			for (Ticket ticket : Ticket.values()) {
+				if (player.tickets.get(ticket) == null) {
+					throw new IllegalArgumentException("Ticket, you willy!");
+				}
+			}
+			/*
 			if (detective.tickets.get(TAXI) == null) {
 				throw new IllegalArgumentException("Ticket, you willy!");
 			}
@@ -146,9 +152,15 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			}
 			if (detective.tickets.get(UNDERGROUND) == null) {
 				throw new IllegalArgumentException("Ticket, you willy!");
+			}*/
+		}
+		/*
+		//Check that mrX has references to his tickets:
+		for (Ticket ticket : Ticket.values()) {
+			if (mrX.tickets.get(ticket) == null) {
+				throw new IllegalArgumentException("Ticket, you willy mrX!");
 			}
 		}
-		//Check that mrX has references to his tickets:
 		if (mrX.tickets.get(TAXI) == null) {
 			throw new IllegalArgumentException("Ticket, you willy mrX!");
 		}
@@ -163,7 +175,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 		if (mrX.tickets.get(DOUBLE) == null) {
 			throw new IllegalArgumentException("Ticket, you willy mrX!");
-		}
+		}*/
 
 
 	}
@@ -664,6 +676,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		return true;
 	}
 
+
 	@Override
 	public boolean isGameOver() {
 		// Are we out of rounds?
@@ -677,7 +690,10 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 		// Is Mr X Captured?
 		for (Colour colour : detectiveColours) {
-			if (getPlayerLocation(colour) == getPlayerLocation(BLACK)) return true;
+			if (getPlayerLocation(colour) == getPlayerLocation(BLACK)) {
+				//detectivesWin();
+				return true;
+			}
 		}
 
 		// Do any detectives have tickets remaining?
@@ -718,14 +734,19 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 		// Is Mr X cornered?
 		// NOTE: currently breaks many tests. Unsure as to why.
-		/*Collection<Edge<Integer, Transport>> edges = graphPublic.getEdgesFrom(graphPublic.getNode(getPlayerLocation(BLACK).get()));
+		/*boolean mrXCornered = true;
+		Collection<Edge<Integer, Transport>> edges = graphPublic.getEdgesFrom(graphPublic.getNode(getPlayerLocation(BLACK).get()));
 		for (Edge<Integer, Transport> edge : edges) {
 			boolean destinationOccupied = false;
 			for (Colour colour : detectiveColours) {
 				if (edge.destination().value() == getPlayerLocation(colour).get()) destinationOccupied = true;
 			}
-			if (destinationOccupied == false) return false;
-		}*/
+			if (destinationOccupied == false) mrXCornered = false;
+		}
+		if (mrXCornered == true) {
+			return true;
+		}
+		*/
 
 		return false;
 	}
