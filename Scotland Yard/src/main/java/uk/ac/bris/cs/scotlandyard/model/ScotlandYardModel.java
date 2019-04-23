@@ -211,6 +211,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		boolean canAdd = true;
 		if(spectator == null){
 			throw new NullPointerException("You aint got no spectator you bastard!");
+
 		}
 		else{
 			//Firstly check all of the spectators currently in our collection. Make sure that we're not adding a duplicate
@@ -222,6 +223,9 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			if(canAdd){
 				publicSpectators.add(spectator);
 			}
+		}
+		if(canAdd == false){
+			throw new IllegalArgumentException("We have already added this spectator man!");
 		}
 
 	}
@@ -256,7 +260,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	//This subroutine increments the currently selected player that we will be dealing with.
 	//Loops around if it reaches the end of the array.
 	public void startRotate() {
-
+		currentPlayer = publicMrXPlayer;
 		for(ScotlandYardPlayer p : scotlandYardPlayers) {
 			currentPlayer = scotlandYardPlayers.get(intCurrentPlayerIndex);
 			currentPlayerInterface = publicPlayerConfigurations.get(intCurrentPlayerIndex).player;
@@ -279,7 +283,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 
 		intCurrentPlayerIndex = 0;
-
+		currentPlayer = publicMrXPlayer;
 		System.out.println(intCurrentRound);
 		System.out.println(intCurrentPlayerIndex);
 
@@ -290,6 +294,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		if(isGameOver()){
 			for(Spectator s: publicSpectators){
 				s.onGameOver(this, getWinningPlayers());
+
 			}
 		}
 		else {
@@ -326,7 +331,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 		Consumer<Move> moveConsumer = move -> {
 			//Do a move?
-			boolean validMove = false;
+			boolean validMove = true;
 			if(move == null){
 				throw new NullPointerException();
 
@@ -334,19 +339,13 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			if(move == new PassMove(currentPlayer.colour())){
 				throw new RuntimeException("Uhh I'm lost");
 			}
-			for(Move mv : moveSet){
-				if(mv == move){
-					validMove = true;
-					System.out.println("_");
-					System.out.println("Our move is valid!");
-				}
-			}
-			if(moveSet.size() == 0){
-				validMove = true;
+
+			if(!moveSet.contains(move)){
+				validMove = false;
 			}
 			if(validMove == false){ //maybe we are not generating the right move set?
 
-				//	throw new IllegalArgumentException();
+					throw new IllegalArgumentException();
 			}
 			// if our move is valid, do the shenanigans with the tickets:
 
