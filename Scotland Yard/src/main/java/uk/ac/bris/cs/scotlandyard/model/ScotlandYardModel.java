@@ -408,12 +408,25 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				ticketTempGranted = false;
 				//baso we're just gonna cheat and read the last number from the string
 				String[] destinations = move.toString().split("->");
+				String singleDestination = destinations[1].replaceAll("[^\\d]", "" );
 				String doubleDestination = destinations[2].replace("]", "");
-				System.out.println("Destinations: " + doubleDestination);
+				System.out.println("singleDestination: " + singleDestination);
+				System.out.println("Destination: " + doubleDestination);
 				intDestination = Integer.parseInt(doubleDestination);
+				int intSingleDestination = Integer.parseInt(singleDestination);
 				currentPlayer.location(intDestination);
 				//NOTIFY DOUBLE MOVE
 				for (Spectator s : publicSpectators){
+					// We need to check whether mrX should be hidden or not
+					// If he is hidden this turn, use his last known position
+					// If he is hidden next turn, also use his last known position
+
+					// if MrX may be seen both rounds, just make the move
+					if(publicRounds.get(getCurrentRound()) && publicRounds.get(getCurrentRound() + 1)){
+
+					}
+
+					// if MrX may not be seen this round, use his last known position and move to the next known one
 					s.onMoveMade(view, move);
 				}
 				//ASSERT ROUND 0
@@ -424,7 +437,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				}
 				//NOTIFY THE FIRST TICKET MOVE
 				for (Spectator s : publicSpectators){
-					s.onMoveMade(view, new TicketMove(BLACK, TAXI, 46)); //Change this to actual move
+					s.onMoveMade(view, new TicketMove(BLACK, TAXI, intSingleDestination)); //Change this to actual move
 				}
 				//ASSERT ROUND 1
 				intCurrentRound += 1;
@@ -434,7 +447,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				}
 				//NOTIFY THE SECOND TICKET MOVE
 				for (Spectator s : publicSpectators){
-					s.onMoveMade(view, new TicketMove(BLACK, BUS, 34));
+					s.onMoveMade(view, new TicketMove(BLACK, BUS, intDestination));
 				}
 				//ASSERT ROUND 2
 				intCurrentRound += 1;
@@ -645,7 +658,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 					while(intCurrentRound <= 0){
 						intCurrentRound +=1;
 					}
-					System.out.println("THE LAST SEEN POSITION OF MRX WAS " + intPublicLastSeenPosition + " ON ROUND " + intCurrentRound);
+					//System.out.println("THE LAST SEEN POSITION OF MRX WAS " + intPublicLastSeenPosition + " ON ROUND " + intCurrentRound);
 					if(publicRounds.get(intCurrentRound -1) == true){
 						intPublicLastSeenPosition = player.location();
 						return Optional.of(intPublicLastSeenPosition); // aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
