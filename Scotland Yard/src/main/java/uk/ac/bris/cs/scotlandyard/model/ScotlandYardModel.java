@@ -260,7 +260,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	//This subroutine increments the currently selected player that we will be dealing with.
 	//Loops around if it reaches the end of the array.
 	public void startRotate() {
-		currentPlayer = publicMrXPlayer;
+		intCurrentPlayerIndex = 0;
 		for(ScotlandYardPlayer p : scotlandYardPlayers) {
 			currentPlayer = scotlandYardPlayers.get(intCurrentPlayerIndex);
 			currentPlayerInterface = publicPlayerConfigurations.get(intCurrentPlayerIndex).player;
@@ -281,8 +281,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				currentPlayerInterface = publicPlayerConfigurations.get(intCurrentPlayerIndex).player;
 			}
 		}
-
-		intCurrentPlayerIndex = 0;
 		currentPlayer = publicMrXPlayer;
 		System.out.println(intCurrentRound);
 		System.out.println(intCurrentPlayerIndex);
@@ -337,7 +335,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 			}
 			if(move == new PassMove(currentPlayer.colour())){
-				throw new RuntimeException("Uhh I'm lost");
+				throw new RuntimeException("Uhh I'm lost, I have to throw a pass move");
 			}
 
 			if(!moveSet.contains(move)){
