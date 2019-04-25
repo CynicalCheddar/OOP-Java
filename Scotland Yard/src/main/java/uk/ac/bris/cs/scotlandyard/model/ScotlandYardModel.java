@@ -136,8 +136,14 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 
 
-		//Check that all the detectives have references to their ticket types:
-		for (PlayerConfiguration detective : detectives) {
+        //Check that all the players have references to their ticket types:
+        for (PlayerConfiguration player : publicPlayerConfigurations) {
+            for (Ticket ticket : Ticket.values()) {
+                if (player.tickets.get(ticket) == null) {
+                    throw new IllegalArgumentException("Ticket, you willy!");
+                }
+            }
+			/*
 			if (detective.tickets.get(TAXI) == null) {
 				throw new IllegalArgumentException("Ticket, you willy!");
 			}
@@ -146,9 +152,15 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			}
 			if (detective.tickets.get(UNDERGROUND) == null) {
 				throw new IllegalArgumentException("Ticket, you willy!");
+			}*/
+        }
+		/*
+		//Check that mrX has references to his tickets:
+		for (Ticket ticket : Ticket.values()) {
+			if (mrX.tickets.get(ticket) == null) {
+				throw new IllegalArgumentException("Ticket, you willy mrX!");
 			}
 		}
-		//Check that mrX has references to his tickets:
 		if (mrX.tickets.get(TAXI) == null) {
 			throw new IllegalArgumentException("Ticket, you willy mrX!");
 		}
@@ -163,10 +175,11 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 		if (mrX.tickets.get(DOUBLE) == null) {
 			throw new IllegalArgumentException("Ticket, you willy mrX!");
-		}
+		}*/
 
 
-	}
+
+    }
 
 
 	public void validatePlayers(List<ScotlandYardPlayer> scotlandYardPlayerList, ScotlandYardPlayer mrXPlayer, List<PlayerConfiguration> playerConfigurations){
@@ -462,7 +475,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		Collection<Edge<Integer, Transport>> connectedEdges = graphPublic.getEdgesFrom(graphPublic.getNode(currentPlayer.location()));
 		for(Edge<Integer, Transport> connectedEdge : connectedEdges) {
 			//firstly, check that no other player is occupying the node that we're gonna look at:
-			if (nodeOccupied(connectedEdge.destination().value()) == false) {
+			if (nodeOccupiedExcludingMrX(connectedEdge.destination().value()) == false) {
 				// add a preliminary secret move if the player is mrX:
 				if (currentPlayer.isMrX() && currentPlayer.hasTickets(SECRET)) {
 					moveSet.add(new TicketMove(currentPlayer.colour(), SECRET, connectedEdge.destination().value()));
@@ -648,87 +661,114 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		return Optional.of(null);
 	}
 
-	// Returns true if the player of a specified colour can't move.
-	public boolean isPlayerStuck(Colour colour) {
-		Collection<Edge<Integer, Transport>> edges = graphPublic.getEdgesFrom(graphPublic.getNode(getPlayerLocation(colour).get()));
-		// Can they move via secret?
-		if (getPlayerTickets(colour, SECRET).get() != 0) return false;
-		// Can they move via taxi?
-		if (getPlayerTickets(colour, TAXI).get() != 0) return false;
-		// Can they move via bus?
-		if (getPlayerTickets(colour, BUS).get() != 0) {
-			for (Edge<Integer, Transport> edge : edges) {
-				if (edge.data() == Transport.BUS) return false;
-			}
-		}
-		// Can they move via underground?
-		if (getPlayerTickets(colour, UNDERGROUND).get() != 0) {
-			for (Edge<Integer, Transport> edge : edges) {
-				if (edge.data() == Transport.UNDERGROUND) return false;
-			}
-		}
-		return true;
-	}
+    // Returns true if the player of a specified colour can't move.
+    // Compares available routes to the player's tickets.
+    // Makes sure destination isn't occupied.
+    public boolean isPlayerStuck(Colour colour) {
+        Collection<Edge<Integer, Transport>> edges = graphPublic.getEdgesFrom(graphPublic.getNode(getPlayerLocation(colour).get()));
+        // Can they move via secret?
+        if (getPlayerTickets(colour, SECRET).get() != 0) {
+            for (Edge<Integer, Transport> edge : edges) {
+                if (nodeOccupied(edge.destination().value()) == false) return false;
+            }
+        }
+        // Can they move via taxi?
+        if (getPlayerTickets(colour, TAXI).get() != 0) {
+            for (Edge<Integer, Transport> edge : edges) {
+                if (edge.data() == Transport.TAXI && nodeOccupied(edge.destination().value()) == false) return false;
+            }
+        }
+        // Can they move via bus?
+        if (getPlayerTickets(colour, BUS).get() != 0) {
+            for (Edge<Integer, Transport> edge : edges) {
+                if (edge.data() == Transport.BUS && nodeOccupied(edge.destination().value()) == false) return false;
+            }
+        }
+        // Can they move via underground?
+        if (getPlayerTickets(colour, UNDERGROUND).get() != 0) {
+            for (Edge<Integer, Transport> edge : edges) {
+                if (edge.data() == Transport.UNDERGROUND && nodeOccupied(edge.destination().value()) == false) return false;
+            }
+        }
+        return true;
+    }
 
-	@Override
-	public boolean isGameOver() {
-		// Are we out of rounds?
-		if (intCurrentRound == intMaxRounds) {
+    @Override
+    public boolean isGameOver() {
+        // Are we out of rounds?
+        if (intCurrentRound == intMaxRounds) {
+            mrXWon = true;
+            return true;
+        }
+
+        // Game can't be over on round 0.
+        if (intCurrentRound == 0) return false;
+
+        // Is Mr X Captured?
+        for (Colour colour : detectiveColours) {
+            if (getPlayerLocation(colour) == getPlayerLocation(BLACK)) {
+                //detectivesWin();
+                return true;
+            }
+        }
+
+        // Do any detectives have tickets remaining?
+        boolean ticketsRemaining = false;
+        for (Colour colour : detectiveColours) {
+            for (Ticket ticket : Ticket.values())
+                if (getPlayerTickets(colour, ticket).get() != 0) {
+                    ticketsRemaining = true;
+                }
+        }
+        if (ticketsRemaining == false) {
+            mrXWon = true;
+            return true;
+        }
+
+        // Are all the detectives stuck?
+        boolean detectivesStuck = true;
+        for (Colour colour : detectiveColours) {
+            if (isPlayerStuck(colour) == false) detectivesStuck = false;
+        }
+        if (detectivesStuck == true) {
+            mrXWon = true;
+            // Do spectator shizzle for mrX winning:
+            for (Spectator s : publicSpectators){
+                Set<Colour> mrXColour = new HashSet<>();
+                mrXColour.add(BLACK);
+                s.onGameOver(this, mrXColour);
+            }
+            return true;
+        }
+
+        // Is Mr X stuck?
+        // NOTE: currently breaks many tests, I guess Mr X can get unstuck at some point???
+		/*if (isPlayerStuck(BLACK) == true) {
 			mrXWon = true;
 			return true;
-		}
+		}*/
 
-		// Game can't be over on round 0.
-		if (intCurrentRound == 0) return false;
-
-		// Is Mr X Captured?
-		for (Colour colour : detectiveColours) {
-			if (getPlayerLocation(colour) == getPlayerLocation(BLACK)) return true;
-		}
-
-		// Do any detectives have tickets remaining?
-		boolean ticketsRemaining = false;
-		for (Colour colour : detectiveColours) {
-			for (Ticket ticket : Ticket.values())
-				if (getPlayerTickets(colour, ticket).get() != 0) {
-					ticketsRemaining = true;
-				}
-		}
-		if (ticketsRemaining == false) {
-			mrXWon = true;
-			return true;
-		}
-
-		// Are all the detectives stuck?
-		boolean detectivesStuck = true;
-		for (Colour colour : detectiveColours) {
-			if (isPlayerStuck(colour) == false) detectivesStuck = false;
-		}
-		if (detectivesStuck == true) {
-			mrXWon = true;
-			// Do spectator shizzle for mrX winning:
-			for (Spectator s : publicSpectators){
-				Set<Colour> mrXColour = new HashSet<>();
-				mrXColour.add(BLACK);
-				s.onGameOver(this, mrXColour);
-			}
-			return true;
-		}
-
-		// Is Mr X cornered?
-		/*Collection<Edge<Integer, Transport>> edges = graphPublic.getEdgesFrom(graphPublic.getNode(getPlayerLocation(BLACK).get()));
+        // Is Mr X cornered?
+        // NOTE: currently breaks many tests. Unsure as to why.
+		/*boolean mrXCornered = true;
+		Collection<Edge<Integer, Transport>> edges = graphPublic.getEdgesFrom(graphPublic.getNode(getPlayerLocation(BLACK).get()));
 		for (Edge<Integer, Transport> edge : edges) {
 			boolean destinationOccupied = false;
 			for (Colour colour : detectiveColours) {
 				if (edge.destination().value() == getPlayerLocation(colour).get()) destinationOccupied = true;
 			}
-			if (destinationOccupied == false) return false;
-		}*/
+			if (destinationOccupied == false) mrXCornered = false;
+		}
+		if (mrXCornered == true) {
+			return true;
+		}
+		*/
 
-		return false;
-	}
+        return false;
+    }
 
-	@Override
+
+    @Override
 	public Colour getCurrentPlayer() {
 		return (currentPlayer.colour());
 	}
