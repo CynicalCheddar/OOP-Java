@@ -406,7 +406,14 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 				currentPlayer.removeTicket(DOUBLE);
 				ticketTempGranted = false;
-				//baso we're just gonna cheat and read the last number from the string
+				//baso we're just gonna cheat and read the last number from the
+				boolean blnHideFirstMove = false;
+				boolean blnHideSecondMove = false;
+				String[] tickets = move.toString().split("-");
+				String ticketType1 = tickets[1].replaceAll("[^a-zA-Z]", "");
+				System.out.println(ticketType1);
+				String ticketType2 = tickets[3].replaceAll("[^a-zA-Z]", "");
+				System.out.println(ticketType2);
 				String[] destinations = move.toString().split("->");
 				String singleDestination = destinations[1].replaceAll("[^\\d]", "" );
 				String doubleDestination = destinations[2].replace("]", "");
@@ -425,9 +432,41 @@ public class ScotlandYardModel implements ScotlandYardGame {
 					if(publicRounds.get(getCurrentRound()) && publicRounds.get(getCurrentRound() + 1)){
 
 					}
+					// if MrX may not be seen both rounds, make up a lastPos -> lastPos move containing the transport methods
+					if(!publicRounds.get(getCurrentRound()) && !publicRounds.get(getCurrentRound() + 1)){
+						System.out.println("fullyHiddenDoubleMove engaged!");
+						DoubleMove fullyHiddenDoubleMove = new DoubleMove(BLACK, TAXI, intPublicLastSeenPosition, BUS, intPublicLastSeenPosition);
+						s.onMoveMade(view, fullyHiddenDoubleMove);
+						blnHideFirstMove = true;
+						blnHideSecondMove = true;
+					}
+					else if(publicRounds.get(getCurrentRound()) && !publicRounds.get(getCurrentRound() + 1)){
+						System.out.println("latterHiddenDoubleMove engaged!");
+						DoubleMove latterHiddenDoubleMove = new DoubleMove(BLACK, TAXI, intSingleDestination, BUS, intSingleDestination);
+						s.onMoveMade(view, latterHiddenDoubleMove);
+						blnHideFirstMove = false;
+						blnHideSecondMove = true;
+					}
+					else if(publicRounds.get(getCurrentRound()) && !publicRounds.get(getCurrentRound() + 1)){
+						System.out.println("formerHiddenDoubleMove engaged!");
+						DoubleMove formerHiddenDoubleMove = new DoubleMove(BLACK, TAXI, intSingleDestination, BUS, intDestination);
+						s.onMoveMade(view, formerHiddenDoubleMove);
+						blnHideFirstMove = false;
+						blnHideSecondMove = false;
+					}
+					else if(!publicRounds.get(getCurrentRound()) && publicRounds.get(getCurrentRound() + 1)){
+						System.out.println("hidden to reveal engaged!");
+						DoubleMove formerHiddenDoubleMove = new DoubleMove(BLACK, TAXI, intPublicLastSeenPosition, BUS, intDestination);
+						s.onMoveMade(view, formerHiddenDoubleMove);
+						blnHideFirstMove = true;
+						blnHideSecondMove = false;
+					}
+					else{
+						s.onMoveMade(view, move);
+					}
 
 					// if MrX may not be seen this round, use his last known position and move to the next known one
-					s.onMoveMade(view, move);
+
 				}
 				//ASSERT ROUND 0
 				intCurrentRound += 1;
@@ -437,7 +476,13 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				}
 				//NOTIFY THE FIRST TICKET MOVE
 				for (Spectator s : publicSpectators){
-					s.onMoveMade(view, new TicketMove(BLACK, TAXI, intSingleDestination)); //Change this to actual move
+					if(!blnHideFirstMove){
+						s.onMoveMade(view, new TicketMove(BLACK, TAXI, intSingleDestination));
+					}
+					else if(blnHideFirstMove){
+						s.onMoveMade(view, new TicketMove(BLACK, TAXI, intPublicLastSeenPosition)); //Change this to actual move
+					}
+
 				}
 				//ASSERT ROUND 1
 				intCurrentRound += 1;
@@ -447,7 +492,33 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				}
 				//NOTIFY THE SECOND TICKET MOVE
 				for (Spectator s : publicSpectators){
-					s.onMoveMade(view, new TicketMove(BLACK, BUS, intDestination));
+					if(!blnHideSecondMove){
+
+						if(ticketType2.contains("TAXI")) {
+							s.onMoveMade(view, new TicketMove(BLACK, TAXI, intDestination));
+						}
+						else if(ticketType2.contains("BUS")) {
+
+							s.onMoveMade(view, new TicketMove(BLACK, BUS, intDestination));
+
+						}
+
+					}
+
+					else if(!blnHideFirstMove && blnHideSecondMove){
+						s.onMoveMade(view, new TicketMove(BLACK, BUS, intSingleDestination)); //Change this to actual move
+					}
+
+					else if(blnHideSecondMove){
+						s.onMoveMade(view, new TicketMove(BLACK, BUS, intPublicLastSeenPosition)); //Change this to actual move
+					}
+					else {
+						System.out.println("YOU SHOULD FUNKING WORK");
+						s.onMoveMade(view, new TicketMove(BLACK, BUS, intDestination));
+					}
+
+
+
 				}
 				//ASSERT ROUND 2
 				intCurrentRound += 1;
