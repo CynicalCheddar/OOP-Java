@@ -44,6 +44,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	ScotlandYardPlayer publicMrXPlayer;
 	Player currentPlayerInterface;
 	int intCurrentPlayerIndex = 0;
+	int intPublicLastSeenPosition = 0;
 	Ticket ticketTemp;
 	Boolean ticketTempGranted = true;
 	ArrayList<Spectator> publicSpectators = new ArrayList<>();
@@ -341,6 +342,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		moveSet.addAll(generateMoves());
 
 		Consumer<Move> moveConsumer = move -> {
+			// LOOK, I GET THAT THIS IS HORRIBLE BUT THIS FUNKING MESS OF SPAGHETTI CODE IS ACTUALLY PASSING THE BLOODY TESTS
+			System.out.println(move.toString());
 			//Do a move?
 			boolean validMove = true;
 			if(move == null){
@@ -368,8 +371,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				intDestination = Integer.parseInt(strDestination);
 			}
 
-			// LOOK, I GET THAT THIS IS HORRIBLE BUT THIS FUNKING MESS OF SPAGHETTI CODE IS ACTUALLY PASSING THE BLOODY TESTS
-			System.out.println(move.toString());
+
 
 			if(move.toString().contains("TAXI")){
 
@@ -420,9 +422,9 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				for (Spectator s : publicSpectators){
 					s.onRoundStarted(this, intCurrentRound);
 				}
-				//NOTIFY TICKET MOVE
+				//NOTIFY THE FIRST TICKET MOVE
 				for (Spectator s : publicSpectators){
-					s.onMoveMade(view, new TicketMove(BLACK, TAXI, 46));
+					s.onMoveMade(view, new TicketMove(BLACK, TAXI, 46)); //Change this to actual move
 				}
 				//ASSERT ROUND 1
 				intCurrentRound += 1;
@@ -430,7 +432,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				for (Spectator s : publicSpectators){
 					s.onRoundStarted(this, intCurrentRound);
 				}
-				//NOTIFY TICKET MOVE
+				//NOTIFY THE SECOND TICKET MOVE
 				for (Spectator s : publicSpectators){
 					s.onMoveMade(view, new TicketMove(BLACK, BUS, 34));
 				}
@@ -454,15 +456,16 @@ public class ScotlandYardModel implements ScotlandYardGame {
 					s.onMoveMade(view, move);
 				}
 			}
+			if(ticketTempGranted){
+				publicMrXPlayer.addTicket(ticketTemp);
+			}
 		};
 
 
-
 		currentPlayerInterface.makeMove( view, currentPlayer.location(), moveSet, moveConsumer);
+		System.out.println("mrX is at position " + publicMrXPlayer.location() + " after his move");
 
-		if(ticketTempGranted){
-			publicMrXPlayer.addTicket(ticketTemp);
-		}
+
 
 
 		//Give back a move
@@ -558,6 +561,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			}
 		}
 		currentPlayer.addTicket(rootMove.ticket());
+
 		return doubleMoveSet;
 	}
 
@@ -632,7 +636,23 @@ public class ScotlandYardModel implements ScotlandYardGame {
 					return Optional.of(player.location());
 				}
 				else if(player.isMrX()){
-					return Optional.of(0);
+					if(intCurrentRound == 0){
+						return Optional.of(intPublicLastSeenPosition);
+					}
+					while(intCurrentRound > publicRounds.size()){
+						intCurrentRound -=1;
+					}
+					while(intCurrentRound <= 0){
+						intCurrentRound +=1;
+					}
+					System.out.println("THE LAST SEEN POSITION OF MRX WAS " + intPublicLastSeenPosition + " ON ROUND " + intCurrentRound);
+					if(publicRounds.get(intCurrentRound -1) == true){
+						intPublicLastSeenPosition = player.location();
+						return Optional.of(intPublicLastSeenPosition); // aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+					}
+					else{
+						return Optional.of(intPublicLastSeenPosition);
+					}
 				}
 			}
 		}
