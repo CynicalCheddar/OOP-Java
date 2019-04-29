@@ -103,11 +103,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	}
 
 
-	public void validateGameOver(){
-		if(isGameOver() == true){
-			throw new IllegalStateException("Fookin ell the game's already over!");
-		}
-	}
+
 
 	public void validateConfigurations(PlayerConfiguration mrX, List<Boolean> rounds, Graph<Integer, Transport> graph, List<PlayerConfiguration> configurations, List<PlayerConfiguration> detectives) {
 		if (mrX.colour != BLACK || mrX.colour.isDetective()) {
@@ -274,49 +270,54 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	//This subroutine increments the currently selected player that we will be dealing with.
 	//Loops around if it reaches the end of the array.
 	public void startRotate() {
-		intCurrentPlayerIndex = 0;
-		for(ScotlandYardPlayer p : scotlandYardPlayers) {
-			currentPlayer = scotlandYardPlayers.get(intCurrentPlayerIndex);
-			currentPlayerInterface = publicPlayerConfigurations.get(intCurrentPlayerIndex).player;
-			if (intCurrentPlayerIndex == 0 && currentPlayer.isMrX() == false) {
-				throw new RuntimeException("mrX should play first");
-			}
-			if (intCurrentPlayerIndex > publicPlayerConfigurations.size() - 1) {
-				intCurrentPlayerIndex = 0;
-			}
-
-			startMove();
-			// If the player is not responding:
-
-			// Iterate through the players and let them make their moves:
-			if (intCurrentPlayerIndex < scotlandYardPlayers.size() - 1) {
-				intCurrentPlayerIndex += 1; //Get ready to select the next player on the next cycle.
+		if (isGameOver()) {
+			throw new IllegalStateException();
+		} else {
+			intCurrentPlayerIndex = 0;
+			for (ScotlandYardPlayer p : scotlandYardPlayers) {
 				currentPlayer = scotlandYardPlayers.get(intCurrentPlayerIndex);
 				currentPlayerInterface = publicPlayerConfigurations.get(intCurrentPlayerIndex).player;
-			}
-		}
-		currentPlayer = publicMrXPlayer;
-		System.out.println(intCurrentRound);
-		System.out.println(intCurrentPlayerIndex);
+				if (intCurrentPlayerIndex == 0 && currentPlayer.isMrX() == false) {
+					throw new RuntimeException("mrX should play first");
+				}
+				if (intCurrentPlayerIndex > publicPlayerConfigurations.size() - 1) {
+					intCurrentPlayerIndex = 0;
+				}
 
-		// Firstly, check if the game is not over. If it is not, then notify the spectator
-		// that we have completed a rotation.
+				startMove();
+				System.out.println("The gameover state is: " + isGameOver());
 
-		//If either team has won, then notify the spectator that the game is over.
-		if(isGameOver()){
-			for(Spectator s: publicSpectators){
-				s.onGameOver(this, getWinningPlayers());
+				// If the player is not responding:
 
-			}
-		}
-		else {
-			for (Spectator s : publicSpectators) {
-				if (doubleMoveNonsenseShouldNotifyRoundStartTwoTimesInOrder == false) {
-					s.onRotationComplete(this);
+				// Iterate through the players and let them make their moves:
+				if (intCurrentPlayerIndex < scotlandYardPlayers.size() - 1) {
+					intCurrentPlayerIndex += 1; //Get ready to select the next player on the next cycle.
+					currentPlayer = scotlandYardPlayers.get(intCurrentPlayerIndex);
+					currentPlayerInterface = publicPlayerConfigurations.get(intCurrentPlayerIndex).player;
 				}
 			}
+			currentPlayer = publicMrXPlayer;
+			System.out.println(intCurrentRound);
+			System.out.println(intCurrentPlayerIndex);
+
+			// Firstly, check if the game is not over. If it is not, then notify the spectator
+			// that we have completed a rotation.
+
+			//If either team has won, then notify the spectator that the game is over.
+			if (isGameOver()) {
+				for (Spectator s : publicSpectators) {
+					s.onGameOver(this, getWinningPlayers());
+
+				}
+			} else {
+				for (Spectator s : publicSpectators) {
+					if (doubleMoveNonsenseShouldNotifyRoundStartTwoTimesInOrder == false) {
+						s.onRotationComplete(this);
+					}
+				}
+			}
+			doubleMoveNonsenseShouldNotifyRoundStartTwoTimesInOrder = false;
 		}
-		doubleMoveNonsenseShouldNotifyRoundStartTwoTimesInOrder = false;
 	}
 
 	public void startMove(){
@@ -343,6 +344,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 		Consumer<Move> moveConsumer = move -> {
 			// LOOK, I GET THAT THIS IS HORRIBLE BUT THIS FUNKING MESS OF SPAGHETTI CODE IS ACTUALLY PASSING THE BLOODY TESTS
+			ScotlandYardPlayer commitPlayer = currentPlayer;
 			System.out.println(move.toString());
 			//Do a move?
 			boolean validMove = true;
@@ -350,7 +352,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				throw new NullPointerException();
 
 			}
-			if(move == new PassMove(currentPlayer.colour())){
+			if(move == new PassMove(commitPlayer.colour())){
 				throw new RuntimeException("Uhh I'm lost, I have to throw a pass move");
 			}
 
@@ -372,39 +374,60 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			}
 
 
+			//Pre-emptively getting a reference to the next player upon committing the move
+			if(intCurrentPlayerIndex < scotlandYardPlayers.size() -1) {
+				System.out.println("THE CURRENT PLAYER IS" + intCurrentPlayerIndex);
+				currentPlayer = scotlandYardPlayers.get(intCurrentPlayerIndex + 1);
+
+				System.out.println(currentPlayer.colour().toString());
+			}
+			else{
+				currentPlayer = publicMrXPlayer;
+				System.out.println("THE CURRENT PLAYER IS" + intCurrentPlayerIndex);
+				intCurrentPlayerIndex = 0;
+				System.out.println(currentPlayer.colour().toString());
+			}
+
+
 
 			if(move.toString().contains("TAXI")){
 
-				currentPlayer.removeTicket(TAXI);
+				commitPlayer.removeTicket(TAXI);
 				ticketTempGranted = true;
 				ticketTemp = TAXI;
-				currentPlayer.location(intDestination);
+				commitPlayer.location(intDestination);
 
 
 			}
 			if(move.toString().contains("BUS")){
 
-				currentPlayer.removeTicket(BUS);
+				commitPlayer.removeTicket(BUS);
 				ticketTempGranted = true;
 				ticketTemp = BUS;
-				currentPlayer.location(intDestination);
+				commitPlayer.location(intDestination);
 			}
 			if(move.toString().contains("UNDERGROUND")){
 
-				currentPlayer.removeTicket(UNDERGROUND);
+				commitPlayer.removeTicket(UNDERGROUND);
 				ticketTempGranted = true;
 				ticketTemp = UNDERGROUND;
-				currentPlayer.location(intDestination);
+				commitPlayer.location(intDestination);
 
 			}
+
+			// At this point, we're gonna check if the move will result in Mrx being stuck:
+
 			if(move.toString().contains("Pass")){
 
 				ticketTempGranted = false;
-				currentPlayer.location(currentPlayer.location());
+				commitPlayer.location(commitPlayer.location());
 			}
+
+
+
 			if(move.toString().contains("Double")){
 
-				currentPlayer.removeTicket(DOUBLE);
+				commitPlayer.removeTicket(DOUBLE);
 				ticketTempGranted = false;
 				//baso we're just gonna cheat and read the last number from the
 				boolean blnHideFirstMove = false;
@@ -421,7 +444,9 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				System.out.println("Destination: " + doubleDestination);
 				intDestination = Integer.parseInt(doubleDestination);
 				int intSingleDestination = Integer.parseInt(singleDestination);
-				currentPlayer.location(intDestination);
+				commitPlayer.location(intDestination);
+
+
 				//NOTIFY DOUBLE MOVE
 				for (Spectator s : publicSpectators){
 					// We need to check whether mrX should be hidden or not
@@ -484,6 +509,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 					}
 
 				}
+
 				//ASSERT ROUND 1
 				intCurrentRound += 1;
 				//START NEW ROUND
@@ -527,7 +553,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				// Leave it... it just passes a test and that is all I care about:
 				doubleMoveNonsenseShouldNotifyRoundStartTwoTimesInOrder = true;
 			}
-			if(currentPlayer.isMrX()){
+			// WE HAVE DONE WITH THE DOUBLE MOVE ----------
+			if(commitPlayer.isMrX()){
 				intCurrentRound += 1;
 				ticketTempGranted = false;
 			}
@@ -536,16 +563,26 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			}
 			// DO THE SPECTATOR SHIZZLE TO MAKE A NEW MOVE
 			if(!move.toString().contains("Double")) {
+				if(commitPlayer == publicMrXPlayer){
+					for (Spectator s : publicSpectators) {
+						s.onRoundStarted(view, intCurrentRound);
+					}
+				}
+				if(ticketTempGranted){
+					publicMrXPlayer.addTicket(ticketTemp);
+				}
 				for (Spectator s : publicSpectators) {
+					// if the player is mrX, then we should see if he should have to cover up his move destination
 					s.onMoveMade(view, move);
 				}
 			}
-			if(ticketTempGranted){
-				publicMrXPlayer.addTicket(ticketTemp);
-			}
+
 		};
 
 
+		// MASSIVE MOVE FUNCTION -----------------------------------------------------------------------------------------
+
+		System.out.println(		isGameOver());
 		currentPlayerInterface.makeMove( view, currentPlayer.location(), moveSet, moveConsumer);
 		System.out.println("mrX is at position " + publicMrXPlayer.location() + " after his move");
 
@@ -768,20 +805,39 @@ public class ScotlandYardModel implements ScotlandYardGame {
     // Returns true if the player of a specified colour can't move.
     // Compares available routes to the player's tickets.
     // Makes sure destination isn't occupied.
+
+	// Okay, Imma make a change to this where we directly interface with the player location. This is because there is some
+	// jiggery pokery with the mr X being hidden nonsense.
     public boolean isPlayerStuck(Colour colour) {
-        Collection<Edge<Integer, Transport>> edges = graphPublic.getEdgesFrom(graphPublic.getNode(getPlayerLocation(colour).get()));
+
+		int loc = 0;
+		if(colour != BLACK) {
+			loc = getPlayerLocation(colour).get();
+		}
+		else{
+			loc = publicMrXPlayer.location();
+		}
+        Collection<Edge<Integer, Transport>> edges = graphPublic.getEdgesFrom(graphPublic.getNode(loc));
+
         // Can they move via secret?
-        if (getPlayerTickets(colour, SECRET).get() != 0) {
-            for (Edge<Integer, Transport> edge : edges) {
-                if (nodeOccupied(edge.destination().value()) == false) return false;
-            }
-        }
+		if(colour == BLACK) {
+			if (getPlayerTickets(colour, SECRET).get() != 0) {
+				for (Edge<Integer, Transport> edge : edges) {
+					if (nodeOccupied(edge.destination().value()) == false) return false;
+				}
+			}
+		}
+
         // Can they move via taxi?
         if (getPlayerTickets(colour, TAXI).get() != 0) {
+
             for (Edge<Integer, Transport> edge : edges) {
+
                 if (edge.data() == Transport.TAXI && nodeOccupied(edge.destination().value()) == false) return false;
+
             }
         }
+
         // Can they move via bus?
         if (getPlayerTickets(colour, BUS).get() != 0) {
             for (Edge<Integer, Transport> edge : edges) {
@@ -805,22 +861,21 @@ public class ScotlandYardModel implements ScotlandYardGame {
             return true;
         }
 
-        // Game can't be over on round 0.
-        if (intCurrentRound == 0) return false;
 
         // Is Mr X Captured?
-        for (Colour colour : detectiveColours) {
-            if (getPlayerLocation(colour) == getPlayerLocation(BLACK)) {
-                //detectivesWin();
+        for (ScotlandYardPlayer player : scotlandYardPlayers) {
+
+            if (player.isDetective() && player.location() == publicMrXPlayer.location()) {
+
                 return true;
             }
         }
 
         // Do any detectives have tickets remaining?
         boolean ticketsRemaining = false;
-        for (Colour colour : detectiveColours) {
+        for (ScotlandYardPlayer player : scotlandYardPlayers) {
             for (Ticket ticket : Ticket.values())
-                if (getPlayerTickets(colour, ticket).get() != 0) {
+                if (getPlayerTickets(player.colour(), ticket).get() != 0) {
                     ticketsRemaining = true;
                 }
         }
@@ -832,7 +887,9 @@ public class ScotlandYardModel implements ScotlandYardGame {
         // Are all the detectives stuck?
         boolean detectivesStuck = true;
         for (Colour colour : detectiveColours) {
+
             if (isPlayerStuck(colour) == false) detectivesStuck = false;
+
         }
         if (detectivesStuck == true) {
             mrXWon = true;
@@ -847,10 +904,10 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
         // Is Mr X stuck?
         // NOTE: currently breaks many tests, I guess Mr X can get unstuck at some point???
-		/*if (isPlayerStuck(BLACK) == true) {
+		if (isPlayerStuck(BLACK) == true) {
 			mrXWon = true;
 			return true;
-		}*/
+		}
 
         // Is Mr X cornered?
         // NOTE: currently breaks many tests. Unsure as to why.
@@ -865,8 +922,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 		if (mrXCornered == true) {
 			return true;
-		}
-		*/
+		}*/
+
 
         return false;
     }
