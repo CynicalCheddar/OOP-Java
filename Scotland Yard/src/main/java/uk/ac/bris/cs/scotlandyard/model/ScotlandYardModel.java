@@ -261,7 +261,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	@Override
 	public Collection<Spectator> getSpectators() {
-		// TODO
+
 		//return new ImmutableCollection<Spectator>(publicSpectators);
 		return Collections.unmodifiableCollection(publicSpectators);
 	}
@@ -270,36 +270,44 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	//This subroutine increments the currently selected player that we will be dealing with.
 	//Loops around if it reaches the end of the array.
 	public void startRotate() {
+		boolean blnDoNotChangeCurrentPlayer = false;
 		if (isGameOver()) {
 			throw new IllegalStateException();
 		} else {
 			intCurrentPlayerIndex = 0;
 			for (ScotlandYardPlayer p : scotlandYardPlayers) {
+
+
 				currentPlayer = scotlandYardPlayers.get(intCurrentPlayerIndex);
 				currentPlayerInterface = publicPlayerConfigurations.get(intCurrentPlayerIndex).player;
 				if (intCurrentPlayerIndex == 0 && currentPlayer.isMrX() == false) {
 					throw new RuntimeException("mrX should play first");
 				}
-				if (intCurrentPlayerIndex > publicPlayerConfigurations.size() - 1) {
-					intCurrentPlayerIndex = 0;
-				}
+
 
 				startMove();
-				System.out.println("The gameover state is: " + isGameOver());
-
-				// If the player is not responding:
-
-				// Iterate through the players and let them make their moves:
+				if(isMrXCaptured()){
+					blnDoNotChangeCurrentPlayer = true;
+					break;
+				}
 				if (intCurrentPlayerIndex < scotlandYardPlayers.size() - 1) {
 					intCurrentPlayerIndex += 1; //Get ready to select the next player on the next cycle.
 					currentPlayer = scotlandYardPlayers.get(intCurrentPlayerIndex);
 					currentPlayerInterface = publicPlayerConfigurations.get(intCurrentPlayerIndex).player;
 				}
+				// if the game is over, we may break our for loop and go straight on to inform spectators
+				System.out.println(isGameOver() + " IS THE GAME STATE");
+				if(isMrXCaptured()){
+					blnDoNotChangeCurrentPlayer = true;
+					break;
+				}
 			}
-			currentPlayer = publicMrXPlayer;
-			System.out.println(intCurrentRound);
-			System.out.println(intCurrentPlayerIndex);
 
+
+
+
+			if(blnDoNotChangeCurrentPlayer == false) currentPlayer = publicMrXPlayer;
+			blnDoNotChangeCurrentPlayer = false;
 			// Firstly, check if the game is not over. If it is not, then notify the spectator
 			// that we have completed a rotation.
 
@@ -309,7 +317,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 					s.onGameOver(this, getWinningPlayers());
 
 				}
-			} else {
+			}
+			else {
 				for (Spectator s : publicSpectators) {
 					if (doubleMoveNonsenseShouldNotifyRoundStartTwoTimesInOrder == false) {
 						s.onRotationComplete(this);
@@ -322,19 +331,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	public void startMove(){
 
-		/**
-		 * Called when the player is required to make a move as required by
-		 * the @link ScotlandYardGame}
-		 *
-		 * @param view a view of the current {@link ScotlandYardGame}, there are no
-		 *        guarantees on immutability or thread safety so you should no hold
-		 *        reference to the view beyond the scope of this method; never null
-		 * @param location the location of the player
-		 * @param moves valid moves the player can make; never empty and never null
-		 * @param callback callback when a move is chosen from the given valid
-		 *        moves, the game cannot
-		 */
-		//void makeMove(ScotlandYardView view, int location, Set<Move> moves, Consumer<Move> callback);
 
 		//get the moves the player can make and return as a set
 		ScotlandYardView view = this;
@@ -367,6 +363,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 			//currentPlayer.removeTicket();
 			int intDestination = 0;
+
 			String strDestination = move.toString().replaceAll("\\D+","");
 			System.out.println("Our destination is " + strDestination);
 			if(strDestination.length() > 0){
@@ -388,46 +385,47 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				System.out.println(currentPlayer.colour().toString());
 			}
 
+			if(!move.toString().contains("Double")) {
+				if (move.toString().contains("SECRET")) {
+
+					ticketTempGranted = false;
+					ticketTemp = SECRET;
+					commitPlayer.location(intDestination);
+					commitPlayer.removeTicket(ticketTemp);
+				}
 
 
-			if(move.toString().contains("TAXI")){
+				if (move.toString().contains("TAXI")) {
 
-				commitPlayer.removeTicket(TAXI);
-				ticketTempGranted = true;
-				ticketTemp = TAXI;
-				commitPlayer.location(intDestination);
+					ticketTempGranted = true;
+					ticketTemp = TAXI;
+					commitPlayer.location(intDestination);
+				}
+				if (move.toString().contains("BUS")) {
 
+					ticketTempGranted = true;
+					ticketTemp = BUS;
+					commitPlayer.location(intDestination);
+				}
+				if (move.toString().contains("UNDERGROUND")) {
 
-			}
-			if(move.toString().contains("BUS")){
+					ticketTempGranted = true;
+					ticketTemp = UNDERGROUND;
+					commitPlayer.location(intDestination);
 
-				commitPlayer.removeTicket(BUS);
-				ticketTempGranted = true;
-				ticketTemp = BUS;
-				commitPlayer.location(intDestination);
-			}
-			if(move.toString().contains("UNDERGROUND")){
+				}
+				// At this point, we're gonna check if the move will result in Mrx being stuck:
 
-				commitPlayer.removeTicket(UNDERGROUND);
-				ticketTempGranted = true;
-				ticketTemp = UNDERGROUND;
-				commitPlayer.location(intDestination);
+				if (move.toString().contains("Pass")) {
 
-			}
-
-			// At this point, we're gonna check if the move will result in Mrx being stuck:
-
-			if(move.toString().contains("Pass")){
-
-				ticketTempGranted = false;
-				commitPlayer.location(commitPlayer.location());
+					ticketTempGranted = false;
+					commitPlayer.location(commitPlayer.location());
+				}
 			}
 
 
 
 			if(move.toString().contains("Double")){
-
-				commitPlayer.removeTicket(DOUBLE);
 				ticketTempGranted = false;
 				//baso we're just gonna cheat and read the last number from the
 				boolean blnHideFirstMove = false;
@@ -444,8 +442,19 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				System.out.println("Destination: " + doubleDestination);
 				intDestination = Integer.parseInt(doubleDestination);
 				int intSingleDestination = Integer.parseInt(singleDestination);
-				commitPlayer.location(intDestination);
 
+				Ticket ticket1 = TAXI;
+				Ticket ticket2 = TAXI;
+				if(ticketType1.contains("TAXI")) ticket1 = TAXI;
+				if(ticketType1.contains("BUS")) ticket1 = BUS;
+				if(ticketType1.contains("UNDERGROUND")) ticket1 = UNDERGROUND;
+				if(ticketType1.contains("SECRET")) ticket1 = SECRET;
+				if(ticketType2.contains("TAXI")) ticket2 = TAXI;
+				if(ticketType2.contains("BUS")) ticket2 = BUS;
+				if(ticketType2.contains("UNDERGROUND")) ticket2 = UNDERGROUND;
+				if(ticketType2.contains("SECRET")) ticket2 = SECRET;
+
+				commitPlayer.removeTicket(DOUBLE);
 
 				//NOTIFY DOUBLE MOVE
 				for (Spectator s : publicSpectators){
@@ -453,35 +462,26 @@ public class ScotlandYardModel implements ScotlandYardGame {
 					// If he is hidden this turn, use his last known position
 					// If he is hidden next turn, also use his last known position
 
-					// if MrX may be seen both rounds, just make the move
-					if(publicRounds.get(getCurrentRound()) && publicRounds.get(getCurrentRound() + 1)){
-
-					}
 					// if MrX may not be seen both rounds, make up a lastPos -> lastPos move containing the transport methods
 					if(!publicRounds.get(getCurrentRound()) && !publicRounds.get(getCurrentRound() + 1)){
 						System.out.println("fullyHiddenDoubleMove engaged!");
-						DoubleMove fullyHiddenDoubleMove = new DoubleMove(BLACK, TAXI, intPublicLastSeenPosition, BUS, intPublicLastSeenPosition);
+						DoubleMove fullyHiddenDoubleMove = new DoubleMove(BLACK, ticket1, intPublicLastSeenPosition, ticket2, intPublicLastSeenPosition);
+
 						s.onMoveMade(view, fullyHiddenDoubleMove);
 						blnHideFirstMove = true;
 						blnHideSecondMove = true;
 					}
 					else if(publicRounds.get(getCurrentRound()) && !publicRounds.get(getCurrentRound() + 1)){
 						System.out.println("latterHiddenDoubleMove engaged!");
-						DoubleMove latterHiddenDoubleMove = new DoubleMove(BLACK, TAXI, intSingleDestination, BUS, intSingleDestination);
+						DoubleMove latterHiddenDoubleMove = new DoubleMove(BLACK, ticket1, intSingleDestination, ticket2, intSingleDestination);
 						s.onMoveMade(view, latterHiddenDoubleMove);
 						blnHideFirstMove = false;
 						blnHideSecondMove = true;
 					}
-					else if(publicRounds.get(getCurrentRound()) && !publicRounds.get(getCurrentRound() + 1)){
-						System.out.println("formerHiddenDoubleMove engaged!");
-						DoubleMove formerHiddenDoubleMove = new DoubleMove(BLACK, TAXI, intSingleDestination, BUS, intDestination);
-						s.onMoveMade(view, formerHiddenDoubleMove);
-						blnHideFirstMove = false;
-						blnHideSecondMove = false;
-					}
+
 					else if(!publicRounds.get(getCurrentRound()) && publicRounds.get(getCurrentRound() + 1)){
 						System.out.println("hidden to reveal engaged!");
-						DoubleMove formerHiddenDoubleMove = new DoubleMove(BLACK, TAXI, intPublicLastSeenPosition, BUS, intDestination);
+						DoubleMove formerHiddenDoubleMove = new DoubleMove(BLACK, ticket1, intPublicLastSeenPosition, ticket2, intDestination);
 						s.onMoveMade(view, formerHiddenDoubleMove);
 						blnHideFirstMove = true;
 						blnHideSecondMove = false;
@@ -493,8 +493,10 @@ public class ScotlandYardModel implements ScotlandYardGame {
 					// if MrX may not be seen this round, use his last known position and move to the next known one
 
 				}
+				commitPlayer.removeTicket(ticket1);
+				commitPlayer.location(intSingleDestination);
 				//ASSERT ROUND 0
-				intCurrentRound += 1;
+					intCurrentRound += 1;
 				//START NEW ROUND
 				for (Spectator s : publicSpectators){
 					s.onRoundStarted(this, intCurrentRound);
@@ -502,78 +504,97 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				//NOTIFY THE FIRST TICKET MOVE
 				for (Spectator s : publicSpectators){
 					if(!blnHideFirstMove){
-						s.onMoveMade(view, new TicketMove(BLACK, TAXI, intSingleDestination));
+						s.onMoveMade(view, new TicketMove(BLACK, ticket1, intSingleDestination));
 					}
 					else if(blnHideFirstMove){
-						s.onMoveMade(view, new TicketMove(BLACK, TAXI, intPublicLastSeenPosition)); //Change this to actual move
+						s.onMoveMade(view, new TicketMove(BLACK, ticket1, intPublicLastSeenPosition)); //Change this to actual move
 					}
-
 				}
 
 				//ASSERT ROUND 1
 				intCurrentRound += 1;
 				//START NEW ROUND
+				commitPlayer.removeTicket(ticket2);
+				commitPlayer.location(intDestination);
 				for (Spectator s : publicSpectators){
 					s.onRoundStarted(this, intCurrentRound);
 				}
 				//NOTIFY THE SECOND TICKET MOVE
 				for (Spectator s : publicSpectators){
 					if(!blnHideSecondMove){
-
-						if(ticketType2.contains("TAXI")) {
-							s.onMoveMade(view, new TicketMove(BLACK, TAXI, intDestination));
-						}
-						else if(ticketType2.contains("BUS")) {
-
-							s.onMoveMade(view, new TicketMove(BLACK, BUS, intDestination));
-
-						}
-
+							s.onMoveMade(view, new TicketMove(BLACK, ticket2, intDestination));
 					}
-
 					else if(!blnHideFirstMove && blnHideSecondMove){
-						s.onMoveMade(view, new TicketMove(BLACK, BUS, intSingleDestination)); //Change this to actual move
+						s.onMoveMade(view, new TicketMove(BLACK, ticket2, intSingleDestination)); //Change this to actual move
 					}
-
 					else if(blnHideSecondMove){
-						s.onMoveMade(view, new TicketMove(BLACK, BUS, intPublicLastSeenPosition)); //Change this to actual move
+						s.onMoveMade(view, new TicketMove(BLACK, ticket2, intPublicLastSeenPosition)); //Change this to actual move
 					}
 					else {
-						System.out.println("YOU SHOULD FUNKING WORK");
-						s.onMoveMade(view, new TicketMove(BLACK, BUS, intDestination));
+						s.onMoveMade(view, new TicketMove(BLACK, ticket2, intDestination));
 					}
-
-
-
 				}
 				//ASSERT ROUND 2
-				intCurrentRound += 1;
+				//intCurrentRound += 1;
 				//currentPlayer.location(intDestination);
 
 				// Leave it... it just passes a test and that is all I care about:
 				doubleMoveNonsenseShouldNotifyRoundStartTwoTimesInOrder = true;
 			}
+			else if(ticketTempGranted && ticketTemp != SECRET){
+				commitPlayer.removeTicket(ticketTemp);
+			}
 			// WE HAVE DONE WITH THE DOUBLE MOVE ----------
+
+			// If the move was made by MrX, then increment the round
 			if(commitPlayer.isMrX()){
-				intCurrentRound += 1;
+				if(!move.toString().contains("Double"))intCurrentRound += 1;
 				ticketTempGranted = false;
 			}
 			else{
 				doubleMoveNonsenseShouldNotifyRoundStartTwoTimesInOrder = false;
 			}
-			// DO THE SPECTATOR SHIZZLE TO MAKE A NEW MOVE
+			// DO THE SPECTATOR SHIZZLE TO MAKE A NEW MOVE IF WE ARE NOT USING A DOUBLE MOVE
 			if(!move.toString().contains("Double")) {
 				if(commitPlayer == publicMrXPlayer){
 					for (Spectator s : publicSpectators) {
 						s.onRoundStarted(view, intCurrentRound);
 					}
 				}
+
 				if(ticketTempGranted){
 					publicMrXPlayer.addTicket(ticketTemp);
 				}
 				for (Spectator s : publicSpectators) {
 					// if the player is mrX, then we should see if he should have to cover up his move destination
-					s.onMoveMade(view, move);
+					if(commitPlayer == publicMrXPlayer){
+						if(publicRounds.get(intCurrentRound - 1) == false){
+							TicketMove mv = new TicketMove(BLACK, TAXI, intPublicLastSeenPosition);
+							if(move.toString().contains("TAXI")){
+								mv = new TicketMove(BLACK, TAXI, intPublicLastSeenPosition);
+							}
+							if(move.toString().contains("BUS")){
+								mv = new TicketMove(BLACK, BUS, intPublicLastSeenPosition);
+							}
+							if(move.toString().contains("UNDERGROUND")){
+								mv = new TicketMove(BLACK, UNDERGROUND, intPublicLastSeenPosition);
+							}
+							if(move.toString().contains("SECRET")){
+								mv = new TicketMove(BLACK, SECRET, intPublicLastSeenPosition);
+							}
+
+							s.onMoveMade(view, mv);
+						}
+						else{
+							s.onMoveMade(view, move);
+						}
+					}
+					else{
+						// otherwiiiise....
+						s.onMoveMade(view, move);
+					}
+
+
 				}
 			}
 
@@ -582,7 +603,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 		// MASSIVE MOVE FUNCTION -----------------------------------------------------------------------------------------
 
-		System.out.println(		isGameOver());
 		currentPlayerInterface.makeMove( view, currentPlayer.location(), moveSet, moveConsumer);
 		System.out.println("mrX is at position " + publicMrXPlayer.location() + " after his move");
 
@@ -760,12 +780,12 @@ public class ScotlandYardModel implements ScotlandYardGame {
 					if(intCurrentRound == 0){
 						return Optional.of(intPublicLastSeenPosition);
 					}
-					while(intCurrentRound > publicRounds.size()){
+					/*while(intCurrentRound > publicRounds.size()){
 						intCurrentRound -=1;
 					}
 					while(intCurrentRound <= 0){
 						intCurrentRound +=1;
-					}
+					}*/
 					//System.out.println("THE LAST SEEN POSITION OF MRX WAS " + intPublicLastSeenPosition + " ON ROUND " + intCurrentRound);
 					if(publicRounds.get(intCurrentRound -1) == true){
 						intPublicLastSeenPosition = player.location();
@@ -853,6 +873,17 @@ public class ScotlandYardModel implements ScotlandYardGame {
         return true;
     }
 
+
+    public boolean isMrXCaptured(){
+		for (ScotlandYardPlayer player : scotlandYardPlayers) {
+
+			if (player.isDetective() && player.location() == publicMrXPlayer.location()) {
+
+				return true;
+			}
+		}
+		return false;
+	}
     @Override
     public boolean isGameOver() {
         // Are we out of rounds?
@@ -863,13 +894,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 
         // Is Mr X Captured?
-        for (ScotlandYardPlayer player : scotlandYardPlayers) {
-
-            if (player.isDetective() && player.location() == publicMrXPlayer.location()) {
-
-                return true;
-            }
-        }
+        if(isMrXCaptured()) return true;
 
         // Do any detectives have tickets remaining?
         boolean ticketsRemaining = false;
