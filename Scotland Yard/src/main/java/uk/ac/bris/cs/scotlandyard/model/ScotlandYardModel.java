@@ -534,7 +534,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	// Returns true if the player of a specified colour can't move.
 	// Compares available routes to the player's tickets.
 	// Makes sure destination isn't occupied.
-
 	private boolean isPlayerStuck(Colour colour) {
 		int loc = 0;
 		if (colour != BLACK) loc = getPlayerLocation(colour).get();
@@ -615,7 +614,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 
 		// Is Mr X stuck?
-		// NOTE: currently breaks many tests, I guess Mr X can get unstuck at some point???
 		if (isPlayerStuck(BLACK)) {
 			mrXWon = false;
 			return true;
@@ -636,14 +634,12 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 	@Override
 	public List < Boolean > getRounds() {
-		// TODO
 		return (Collections.unmodifiableList(publicRounds));
 
 	}
 
 	@Override
 	public Graph < Integer, Transport > getGraph() {
-		// TODO
 		return new ImmutableGraph < Integer, Transport > (graphPublic);
 	}
 
