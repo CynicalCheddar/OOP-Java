@@ -270,10 +270,12 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	//This subroutine increments the currently selected player that we will be dealing with.
 	//Loops around if it reaches the end of the array.
 	public void startRotate() {
+
 		boolean blnDoNotChangeCurrentPlayer = false;
 		if (isGameOver()) {
 			throw new IllegalStateException();
-		} else {
+		}
+		else {
 			intCurrentPlayerIndex = 0;
 			for (ScotlandYardPlayer p : scotlandYardPlayers) {
 
@@ -286,6 +288,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 
 				startMove();
+
 				if(isMrXCaptured()){
 					blnDoNotChangeCurrentPlayer = true;
 					break;
@@ -301,13 +304,13 @@ public class ScotlandYardModel implements ScotlandYardGame {
 					blnDoNotChangeCurrentPlayer = true;
 					break;
 				}
+
 			}
 
 
 
-
 			if(blnDoNotChangeCurrentPlayer == false) currentPlayer = publicMrXPlayer;
-			blnDoNotChangeCurrentPlayer = false;
+
 			// Firstly, check if the game is not over. If it is not, then notify the spectator
 			// that we have completed a rotation.
 
@@ -346,17 +349,14 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			boolean validMove = true;
 			if(move == null){
 				throw new NullPointerException();
-
 			}
 			if(move == new PassMove(commitPlayer.colour())){
 				throw new RuntimeException("Uhh I'm lost, I have to throw a pass move");
 			}
-
 			if(!moveSet.contains(move)){
 				validMove = false;
 			}
 			if(validMove == false){ //maybe we are not generating the right move set?
-
 					throw new IllegalArgumentException();
 			}
 			// if our move is valid, do the shenanigans with the tickets:
@@ -369,8 +369,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 			if(strDestination.length() > 0){
 				intDestination = Integer.parseInt(strDestination);
 			}
-
-
 			//Pre-emptively getting a reference to the next player upon committing the move
 			if(intCurrentPlayerIndex < scotlandYardPlayers.size() -1) {
 				System.out.println("THE CURRENT PLAYER IS" + intCurrentPlayerIndex);
@@ -393,8 +391,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 					commitPlayer.location(intDestination);
 					commitPlayer.removeTicket(ticketTemp);
 				}
-
-
 				if (move.toString().contains("TAXI")) {
 
 					ticketTempGranted = true;
@@ -412,7 +408,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 					ticketTempGranted = true;
 					ticketTemp = UNDERGROUND;
 					commitPlayer.location(intDestination);
-
 				}
 				// At this point, we're gonna check if the move will result in Mrx being stuck:
 
@@ -597,20 +592,11 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 				}
 			}
-
 		};
 
 
 		// MASSIVE MOVE FUNCTION -----------------------------------------------------------------------------------------
-
 		currentPlayerInterface.makeMove( view, currentPlayer.location(), moveSet, moveConsumer);
-		System.out.println("mrX is at position " + publicMrXPlayer.location() + " after his move");
-
-
-
-
-		//Give back a move
-
 	}
 	// This is a bloody black box and basically plz don't touch it.
 	Set<Move> generateMoves(){
@@ -887,7 +873,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
     @Override
     public boolean isGameOver() {
         // Are we out of rounds?
-        if (intCurrentRound == intMaxRounds) {
+		// We should only check this property if we are testing it at the end of a rotation
+        if (intCurrentRound == intMaxRounds && currentPlayer == publicMrXPlayer) {
             mrXWon = true;
             return true;
         }
@@ -900,7 +887,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
         boolean ticketsRemaining = false;
         for (ScotlandYardPlayer player : scotlandYardPlayers) {
             for (Ticket ticket : Ticket.values())
-                if (getPlayerTickets(player.colour(), ticket).get() != 0) {
+                if (getPlayerTickets(player.colour(), ticket).get() != 0 && player.isDetective()) {
                     ticketsRemaining = true;
                 }
         }
@@ -930,7 +917,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
         // Is Mr X stuck?
         // NOTE: currently breaks many tests, I guess Mr X can get unstuck at some point???
 		if (isPlayerStuck(BLACK) == true) {
-			mrXWon = true;
+			mrXWon = false;
 			return true;
 		}
 
