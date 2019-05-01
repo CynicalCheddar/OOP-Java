@@ -317,7 +317,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				//NOTIFY THE FIRST TICKET MOVE
 				for (Spectator s: publicSpectators) {
 					if (!blnHideFirstMove) s.onMoveMade(view, new TicketMove(BLACK, ticket1, intSingleDestination));
-					else if (blnHideFirstMove) s.onMoveMade(view, new TicketMove(BLACK, ticket1, intPublicLastSeenPosition)); //Change this to actual move
+					else s.onMoveMade(view, new TicketMove(BLACK, ticket1, intPublicLastSeenPosition)); //Change this to actual move
 				}
 				//Increment the round
 				intCurrentRound += 1;
@@ -330,8 +330,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				//NOTIFY THE SECOND TICKET MOVE
 				for (Spectator s: publicSpectators) {
 					if (!blnHideSecondMove) s.onMoveMade(view, new TicketMove(BLACK, ticket2, intDestination));
-					else if (!blnHideFirstMove && blnHideSecondMove) s.onMoveMade(view, new TicketMove(BLACK, ticket2, intSingleDestination)); //Change this to actual move
-					else if (blnHideSecondMove) s.onMoveMade(view, new TicketMove(BLACK, ticket2, intPublicLastSeenPosition)); //Change this to actual move
+					else if (!blnHideFirstMove && blnHideSecondMove) s.onMoveMade(view, new TicketMove(BLACK, ticket2, intSingleDestination));
+					else if (blnHideSecondMove) s.onMoveMade(view, new TicketMove(BLACK, ticket2, intPublicLastSeenPosition));
 					else s.onMoveMade(view, new TicketMove(BLACK, ticket2, intDestination));
 				}
 				doubleMoveNonsenseShouldNotifyRoundStartTwoTimesInOrder = true;
@@ -345,7 +345,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 				ticketTempGranted = false;
 			} else doubleMoveNonsenseShouldNotifyRoundStartTwoTimesInOrder = false;
 
-			// DO THE SPECTATOR SHIZZLE TO MAKE A NEW MOVE IF WE ARE NOT USING A DOUBLE MOVE
+
 			if (!move.toString().contains("Double")) {
 				if (commitPlayer == publicMrXPlayer) {
 					for (Spectator s: publicSpectators) {
