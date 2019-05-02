@@ -117,7 +117,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 		if (mrXCount > 1) throw new IllegalArgumentException("There's some sort of criminal ring going on, there's more than one mrX!");
 	}
-
+	// Registers an observer in accordance with our observer pattern.
+	// Also performs the relevant tests and checks.
 	@Override
 	public void registerSpectator(Spectator spectator) {
 		boolean canAdd = true;
