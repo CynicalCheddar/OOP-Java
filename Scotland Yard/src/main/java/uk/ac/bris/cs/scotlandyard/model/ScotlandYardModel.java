@@ -111,7 +111,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		// We will iterate through all the players in the game and ensure that the detectives do not have any illegal tickets:
 		int mrXCount = 0;
 		for (ScotlandYardPlayer player: scotlandYardPlayerList) {
-			if (player.hasTickets(DOUBLE) && player.isDetective()) throw new IllegalArgumentException("Yer bastidge, yer bleedin worm! By joh! No detective should have a double ticket");
+			if (player.hasTickets(DOUBLE) && player.isDetective()) throw new IllegalArgumentException("Yer bleedin worm! By joh! No detective should have a double ticket");
 			if (player.hasTickets(SECRET) && player.isDetective()) throw new IllegalArgumentException("The name's Bond... James Bond... but I shouldn't have a secret ticket");
 			if (player.isMrX()) mrXCount += 1;
 		}
@@ -121,8 +121,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	@Override
 	public void registerSpectator(Spectator spectator) {
 		boolean canAdd = true;
-		// If we pass in a null reference to a spectator, this is quite simply a bad thing and we must throw a Null pointer excetption.
-		if (spectator == null) throw new NullPointerException("You aint got no spectator you bastard!");
+		// If we pass in a null reference to a spectator, this is quite simply a bad thing and we must throw a Null pointer exception.
+		if (spectator == null) throw new NullPointerException("You aint got no spectator!");
 			// Otherwise, if the spectator we pass in actually exists, we will test to ensure that no other references to the same spectator have been registered.
 		else {
 			//Firstly check all of the spectators currently in our collection. Make sure that we're not adding a duplicate
@@ -537,7 +537,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	// Returns true if the player of a specified colour can't move.
 	// Compares available routes to the player's tickets.
 	// Makes sure destination isn't occupied.
-
 	private boolean isPlayerStuck(Colour colour) {
 		// Unfortunately, this method may not be implemented using iteration since tickets do not directly map to transport methods.
 		int loc = 0;
