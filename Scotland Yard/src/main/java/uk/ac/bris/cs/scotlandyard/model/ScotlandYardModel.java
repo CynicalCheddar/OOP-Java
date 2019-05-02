@@ -194,6 +194,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 	}
 
+
+	// The startMove method facilitates the whole of the move making function.
 	public void startMove() {
 		//get the moves the player can make and return as a set
 		ScotlandYardView view = this;
