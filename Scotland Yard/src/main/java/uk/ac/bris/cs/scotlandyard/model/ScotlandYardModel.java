@@ -117,7 +117,8 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		}
 		if (mrXCount > 1) throw new IllegalArgumentException("There's some sort of criminal ring going on, there's more than one mrX!");
 	}
-
+	// Registers an observer in accordance with our observer pattern.
+	// Also performs the relevant tests and checks.
 	@Override
 	public void registerSpectator(Spectator spectator) {
 		boolean canAdd = true;
@@ -376,7 +377,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 
 
 
-
+	// Generates a set of moves by analysing each edge and connected node adjacent to our current position.
 	Set < Move > generateMoves() {
 		Set < Move > moveSet = new HashSet < > ();
 		Collection < Edge < Integer, Transport >> connectedEdges = graphPublic.getEdgesFrom(graphPublic.getNode(currentPlayer.location()));
@@ -409,10 +410,12 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		if (moveSet.size() == 0) moveSet.add(new PassMove(currentPlayer.colour()));
 		return moveSet;
 	}
+	// Simply returns whether the conditions are met for a double move set to be generated
 	private Boolean doubleMoveConditions() {
 		if (currentPlayer.isMrX() == true && (intCurrentRound < intMaxRounds - 2) && currentPlayer.hasTickets(DOUBLE)) return true;
 		else return false;
 	}
+	// This method generates and returns an extension to our move set. It is called on each adjacent node to our current node.
 
 	Set < Move > generateDoubleMoves(int nodeID, TicketMove rootMove) {
 		Set < Move > doubleMoveSet = new HashSet < > ();
@@ -452,13 +455,15 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		currentPlayer.addTicket(rootMove.ticket());
 		return doubleMoveSet;
 	}
-
+	// Checks if a node is occupied by any player.
 	boolean nodeOccupied(int nodeID) {
 		for (ScotlandYardPlayer player: scotlandYardPlayers) {
 			if (player.location() == nodeID) return true;
 		}
 		return false;
 	}
+	// Checks if a node is occupied by a detective player.
+	// This is used for determining the validity of a double move, since mrX may simply move back to his prior position.
 	boolean nodeOccupiedExcludingMrX(int nodeID) {
 		for (ScotlandYardPlayer player: scotlandYardPlayers) {
 			if (player.location() == nodeID && player.isMrX() == false) return true;
@@ -519,7 +524,6 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	// Gets the amount of tickets of a certain type owned by a certain -player. Return empty if the player doesn't exist.
 	@Override
 	public Optional < Integer > getPlayerTickets(Colour colour, Ticket ticket) {
-		// TODO
 		boolean validPlayer = false;
 		for (ScotlandYardPlayer player: scotlandYardPlayers) {
 			if (colour == player.colour()) validPlayer = true;
@@ -535,6 +539,7 @@ public class ScotlandYardModel implements ScotlandYardGame {
 	// Compares available routes to the player's tickets.
 	// Makes sure destination isn't occupied.
 	private boolean isPlayerStuck(Colour colour) {
+		// Unfortunately, this method may not be implemented using iteration since tickets do not directly map to transport methods.
 		int loc = 0;
 		if (colour != BLACK) loc = getPlayerLocation(colour).get();
 		else loc = publicMrXPlayer.location();
@@ -568,13 +573,15 @@ public class ScotlandYardModel implements ScotlandYardGame {
 		return true;
 	}
 
-
+	// Method determines whether a detective is currently sharing the same position as mrX.
 	private boolean isMrXCaptured() {
 		for (ScotlandYardPlayer player: scotlandYardPlayers) {
 			if (player.isDetective() && player.location() == publicMrXPlayer.location()) return true;
 		}
 		return false;
 	}
+
+	// Our public method to check whether the game is over. Contains all game over tests for all conditions.
 	@Override
 	public boolean isGameOver() {
 		// Are we out of rounds?
